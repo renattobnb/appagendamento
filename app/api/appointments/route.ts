@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Horario ja ocupado" }, { status: 409 });
   }
 
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from("agendamentos")
     .insert({
       cliente_id: user?.id ?? null,
@@ -109,9 +109,7 @@ export async function POST(request: NextRequest) {
       hora_fim: horaFim,
       status: "pendente",
       observacoes: values.observacoes
-    })
-    .select("id")
-    .single();
+    });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -120,8 +118,13 @@ export async function POST(request: NextRequest) {
   await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/appointment-confirmation`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ appointment_id: data.id })
+    body: JSON.stringify({
+      cliente_nome: clienteNome,
+      cliente_telefone: clienteTelefone,
+      data: values.data,
+      hora_inicio: values.hora_inicio
+    })
   }).catch(() => undefined);
 
-  return NextResponse.json({ appointment: data }, { status: 201 });
+  return NextResponse.json({ ok: true }, { status: 201 });
 }

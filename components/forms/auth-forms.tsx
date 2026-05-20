@@ -2,14 +2,14 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Mail, Lock, User, Phone, Loader2 } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
-import { loginSchema, resetSchema, signupSchema, simpleLoginSchema } from "@/lib/validations/auth";
+import { resetSchema, signupSchema, simpleLoginSchema } from "@/lib/validations/auth";
 
 export function LoginForm() {
   const router = useRouter();

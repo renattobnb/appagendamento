@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CalendarDays, LayoutDashboard, LogIn, Moon, Sun } from "lucide-react";
+import { CalendarDays, LayoutDashboard, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 
@@ -38,12 +38,6 @@ export function Navbar() {
             <Sun className="hidden dark:block" size={18} />
             <Moon className="dark:hidden" size={18} />
           </Button>
-          <Link href="/login">
-            <Button variant="secondary">
-              <LogIn size={16} />
-              Entrar
-            </Button>
-          </Link>
           <Link className="hidden sm:block" href="/admin">
             <Button>
               <LayoutDashboard size={16} />
