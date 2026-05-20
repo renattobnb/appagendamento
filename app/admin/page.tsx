@@ -87,7 +87,7 @@ export default async function AdminDashboardPage() {
                 <tbody>
                   {(appointments ?? []).slice(0, 12).map((appointment) => (
                     <tr key={appointment.id} className="border-b last:border-0">
-                      <td className="py-3">{appointment.users?.nome}</td>
+                      <td className="py-3">{appointment.users?.nome ?? appointment.cliente_nome ?? "Visitante"}</td>
                       <td className="py-3">{appointment.servicos?.nome}</td>
                       <td className="py-3">{appointment.profissionais?.nome}</td>
                       <td className="py-3">{appointment.data}</td>

@@ -65,16 +65,17 @@ export function AppointmentForm({
     const {
       data: { user }
     } = await supabase.auth.getUser();
-
-    if (!user) {
-      toast.error("Entre na sua conta para concluir o agendamento.");
-      return;
-    }
+    const clienteNome = localStorage.getItem("agenda_cliente_nome") ?? undefined;
+    const clienteTelefone = localStorage.getItem("agenda_cliente_whatsapp") ?? undefined;
 
     const response = await fetch("/api/appointments", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(values)
+      body: JSON.stringify({
+        ...values,
+        cliente_nome: user ? undefined : clienteNome,
+        cliente_telefone: user ? undefined : clienteTelefone
+      })
     });
 
     const payload = await response.json();

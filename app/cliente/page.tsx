@@ -13,11 +13,16 @@ export const dynamic = "force-dynamic";
 
 export default async function ClientDashboardPage() {
   const supabase = hasSupabaseEnv() ? await createClient() : null;
-  const appointments = supabase
+  const {
+    data: { user }
+  } = supabase ? await supabase.auth.getUser() : { data: { user: null } };
+
+  const appointments = supabase && user
     ? (
         await supabase
           .from("agendamentos")
           .select("*, servicos(nome), profissionais(nome)")
+          .eq("cliente_id", user.id)
           .order("data", { ascending: false })
           .order("hora_inicio", { ascending: false })
       ).data

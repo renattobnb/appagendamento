@@ -18,16 +18,31 @@ export async function POST(request: NextRequest) {
     data: { user }
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    return NextResponse.json({ error: "Nao autenticado" }, { status: 401 });
-  }
-
   const parsed = appointmentSchema.safeParse(await request.json());
   if (!parsed.success) {
     return NextResponse.json({ error: "Dados invalidos" }, { status: 422 });
   }
 
   const values = parsed.data;
+  const isGuest = !user;
+
+  if (isGuest && (!values.cliente_nome || !values.cliente_telefone)) {
+    return NextResponse.json(
+      { error: "Informe nome e WhatsApp para concluir o agendamento" },
+      { status: 422 }
+    );
+  }
+
+  if (user) {
+    await supabase.from("users").upsert({
+      id: user.id,
+      nome: user.user_metadata?.nome ?? user.email?.split("@")[0] ?? "Cliente",
+      email: user.email ?? `${user.id}@cliente.local`,
+      telefone: user.user_metadata?.telefone ?? null,
+      tipo_usuario: "cliente"
+    });
+  }
+
   const startDate = parseISO(`${values.data}T${values.hora_inicio}:00`);
   if (isBefore(startDate, new Date())) {
     return NextResponse.json({ error: "Nao e permitido agendar no passado" }, { status: 422 });
@@ -78,7 +93,9 @@ export async function POST(request: NextRequest) {
   const { data, error } = await supabase
     .from("agendamentos")
     .insert({
-      cliente_id: user.id,
+      cliente_id: user?.id ?? null,
+      cliente_nome: user ? null : values.cliente_nome,
+      cliente_telefone: user ? null : values.cliente_telefone,
       profissional_id: values.profissional_id,
       servico_id: values.servico_id,
       data: values.data,

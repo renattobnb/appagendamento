@@ -62,7 +62,9 @@ export type Database = {
       agendamentos: {
         Row: {
           id: string;
-          cliente_id: string;
+          cliente_id: string | null;
+          cliente_nome: string | null;
+          cliente_telefone: string | null;
           profissional_id: string;
           servico_id: string;
           data: string;
@@ -74,7 +76,9 @@ export type Database = {
         };
         Insert: {
           id?: string;
-          cliente_id: string;
+          cliente_id?: string | null;
+          cliente_nome?: string | null;
+          cliente_telefone?: string | null;
           profissional_id: string;
           servico_id: string;
           data: string;

@@ -31,7 +31,9 @@ create table public.profissionais (
 
 create table public.agendamentos (
   id uuid primary key default gen_random_uuid(),
-  cliente_id uuid not null references public.users(id) on delete cascade,
+  cliente_id uuid references public.users(id) on delete cascade,
+  cliente_nome text,
+  cliente_telefone text,
   profissional_id uuid not null references public.profissionais(id) on delete restrict,
   servico_id uuid not null references public.servicos(id) on delete restrict,
   data date not null,
@@ -40,7 +42,16 @@ create table public.agendamentos (
   status public.status_agendamento not null default 'pendente',
   observacoes text,
   created_at timestamptz not null default now(),
-  constraint hora_valida check (hora_fim > hora_inicio)
+  constraint hora_valida check (hora_fim > hora_inicio),
+  constraint agendamento_cliente_identificado check (
+    cliente_id is not null
+    or (
+      cliente_nome is not null
+      and length(trim(cliente_nome)) >= 2
+      and cliente_telefone is not null
+      and length(trim(cliente_telefone)) >= 10
+    )
+  )
 );
 
 create table public.disponibilidade (
@@ -129,9 +140,16 @@ create policy "cliente le seus agendamentos"
 on public.agendamentos for select
 using (cliente_id = auth.uid() or public.is_admin());
 
-create policy "cliente cria agendamento proprio"
+create policy "cliente ou visitante cria agendamento"
 on public.agendamentos for insert
-with check (cliente_id = auth.uid());
+with check (
+  cliente_id = auth.uid()
+  or (
+    cliente_id is null
+    and cliente_nome is not null
+    and cliente_telefone is not null
+  )
+);
 
 create policy "cliente cancela ou reagenda agendamento proprio"
 on public.agendamentos for update

@@ -9,50 +9,38 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
-import { loginSchema, resetSchema, signupSchema } from "@/lib/validations/auth";
+import { loginSchema, resetSchema, signupSchema, simpleLoginSchema } from "@/lib/validations/auth";
 
 export function LoginForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const form = useForm<z.infer<typeof loginSchema>>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: { email: "", password: "" }
+  const form = useForm<z.infer<typeof simpleLoginSchema>>({
+    resolver: zodResolver(simpleLoginSchema),
+    defaultValues: { nome: "", telefone: "" }
   });
 
-  async function onSubmit(values: z.infer<typeof loginSchema>) {
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword(values);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    toast.success("Login realizado com sucesso");
-    router.push(searchParams.get("next") ?? "/cliente");
-    router.refresh();
-  }
-
-  async function signInWithGoogle() {
-    const supabase = createClient();
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${location.origin}/cliente` }
-    });
+  function onSubmit(values: z.infer<typeof simpleLoginSchema>) {
+    localStorage.setItem("agenda_cliente_nome", values.nome);
+    localStorage.setItem("agenda_cliente_whatsapp", values.telefone);
+    document.cookie = `agenda_guest=${encodeURIComponent(values.telefone)}; path=/; max-age=2592000; SameSite=Lax`;
+    toast.success("Dados salvos. Vamos escolher seu horario.");
+    router.push("/agendar");
   }
 
   return (
     <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
-      <Field icon={<Mail size={16} />} error={form.formState.errors.email?.message}>
-        <Input placeholder="email@empresa.com" {...form.register("email")} />
+      <Field icon={<User size={16} />} error={form.formState.errors.nome?.message}>
+        <Input placeholder="Seu nome" autoComplete="name" {...form.register("nome")} />
       </Field>
-      <Field icon={<Lock size={16} />} error={form.formState.errors.password?.message}>
-        <Input type="password" placeholder="Senha" {...form.register("password")} />
+      <Field icon={<Phone size={16} />} error={form.formState.errors.telefone?.message}>
+        <Input
+          placeholder="WhatsApp com DDD"
+          inputMode="tel"
+          autoComplete="tel"
+          {...form.register("telefone")}
+        />
       </Field>
       <Button className="w-full" disabled={form.formState.isSubmitting}>
-        {form.formState.isSubmitting && <Loader2 className="animate-spin" size={16} />}
-        Entrar
-      </Button>
-      <Button type="button" variant="secondary" className="w-full" onClick={signInWithGoogle}>
-        Entrar com Google
+        Continuar
       </Button>
     </form>
   );

@@ -42,8 +42,9 @@ export async function middleware(request: NextRequest) {
   const isProtected = protectedRoutes.some((route) =>
     request.nextUrl.pathname.startsWith(route)
   );
+  const hasGuestAccess = Boolean(request.cookies.get("agenda_guest")?.value);
 
-  if (isProtected && !user) {
+  if (isProtected && !user && !hasGuestAccess) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/login";
     redirectUrl.searchParams.set("next", request.nextUrl.pathname);
