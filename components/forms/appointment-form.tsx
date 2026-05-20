@@ -35,12 +35,20 @@ export function AppointmentForm({
       observacoes: ""
     }
   });
+  const [clientData, setClientData] = useState({ nome: "", telefone: "" });
 
   const watch = form.watch();
   const selectedService = useMemo(
     () => services.find((service) => service.id === watch.servico_id),
     [services, watch.servico_id]
   );
+
+  useEffect(() => {
+    setClientData({
+      nome: localStorage.getItem("agenda_cliente_nome") ?? "",
+      telefone: localStorage.getItem("agenda_cliente_whatsapp") ?? ""
+    });
+  }, []);
 
   useEffect(() => {
     async function loadSlots() {
@@ -68,13 +76,18 @@ export function AppointmentForm({
     const clienteNome = localStorage.getItem("agenda_cliente_nome") ?? undefined;
     const clienteTelefone = localStorage.getItem("agenda_cliente_whatsapp") ?? undefined;
 
+    if (!clienteNome || !clienteTelefone) {
+      toast.error("Informe seu nome e WhatsApp na tela de entrada antes de agendar.");
+      return;
+    }
+
     const response = await fetch("/api/appointments", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ...values,
-        cliente_nome: user ? undefined : clienteNome,
-        cliente_telefone: user ? undefined : clienteTelefone
+        cliente_nome: clienteNome,
+        cliente_telefone: clienteTelefone
       })
     });
 
@@ -141,7 +154,9 @@ export function AppointmentForm({
       <div className="flex flex-col gap-3 rounded-lg border bg-muted/35 p-4 text-sm sm:flex-row sm:items-center sm:justify-between">
         <span className="flex items-center gap-2 text-muted-foreground">
           <UserRound size={16} />
-          Duracao automatica: {selectedService?.duracao_minutos ?? 0} minutos
+          {clientData.nome
+            ? `${clientData.nome} - ${clientData.telefone}`
+            : `Duracao automatica: ${selectedService?.duracao_minutos ?? 0} minutos`}
         </span>
         <Button disabled={form.formState.isSubmitting || slots.length === 0}>
           {form.formState.isSubmitting && <Loader2 className="animate-spin" size={16} />}

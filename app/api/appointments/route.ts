@@ -24,9 +24,15 @@ export async function POST(request: NextRequest) {
   }
 
   const values = parsed.data;
-  const isGuest = !user;
+  const clienteNome =
+    values.cliente_nome?.trim() ||
+    user?.user_metadata?.nome ||
+    user?.email?.split("@")[0] ||
+    null;
+  const clienteTelefone =
+    values.cliente_telefone?.trim() || user?.user_metadata?.telefone || null;
 
-  if (isGuest && (!values.cliente_nome || !values.cliente_telefone)) {
+  if (!clienteNome || !clienteTelefone) {
     return NextResponse.json(
       { error: "Informe nome e WhatsApp para concluir o agendamento" },
       { status: 422 }
@@ -94,8 +100,8 @@ export async function POST(request: NextRequest) {
     .from("agendamentos")
     .insert({
       cliente_id: user?.id ?? null,
-      cliente_nome: user ? null : values.cliente_nome,
-      cliente_telefone: user ? null : values.cliente_telefone,
+      cliente_nome: clienteNome,
+      cliente_telefone: clienteTelefone,
       profissional_id: values.profissional_id,
       servico_id: values.servico_id,
       data: values.data,
