@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 210 40% 98%;
+  --foreground: 222 47% 11%;
+  --muted: 214 32% 91%;
+  --muted-foreground: 215 16% 47%;
+  --border: 214 32% 88%;
+  --primary: 173 80% 34%;
+  --primary-foreground: 0 0% 100%;
+  --accent: 26 90% 55%;
+  --accent-foreground: 0 0% 100%;
+}
+
+.dark {
+  --background: 222 47% 8%;
+  --foreground: 210 40% 98%;
+  --muted: 217 33% 17%;
+  --muted-foreground: 215 20% 72%;
+  --border: 217 33% 21%;
+  --primary: 173 76% 42%;
+  --primary-foreground: 222 47% 8%;
+  --accent: 30 92% 58%;
+  --accent-foreground: 222 47% 8%;
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-feature-settings: "rlig" 1, "calt" 1;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.surface {
+  background: color-mix(in srgb, hsl(var(--background)) 86%, white 14%);
+}
+
+.dark .surface {
+  background: color-mix(in srgb, hsl(var(--background)) 88%, white 7%);
+}
