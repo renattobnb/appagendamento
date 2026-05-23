@@ -11,6 +11,7 @@ import { createClient } from "@/lib/supabase/client";
 export function Navbar() {
   const { theme, setTheme } = useTheme();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isProfessional, setIsProfessional] = useState(false);
   const params = useParams();
   const tenantSlug = params?.tenantSlug as string | undefined;
 
@@ -24,7 +25,10 @@ export function Navbar() {
       } = await supabase.auth.getUser();
 
       if (!user) {
-        if (mounted) setIsAdmin(false);
+        if (mounted) {
+          setIsAdmin(false);
+          setIsProfessional(false);
+        }
         return;
       }
 
@@ -36,6 +40,7 @@ export function Navbar() {
 
       if (mounted) {
         setIsAdmin(profile?.tipo_usuario === "administrador");
+        setIsProfessional(profile?.tipo_usuario === "profissional");
       }
     }
 
@@ -77,6 +82,11 @@ export function Navbar() {
                 Admin
               </Link>
             )}
+            {isProfessional && (
+              <Link className="rounded-md px-3 py-2 text-sm hover:bg-muted" href={`/${tenantSlug}/profissional`}>
+                Profissional
+              </Link>
+            )}
           </nav>
         )}
         <div className="flex items-center gap-2">
@@ -97,9 +107,16 @@ export function Navbar() {
               </Button>
             </Link>
           )}
+          {tenantSlug && isProfessional && (
+            <Link className="hidden sm:block" href={`/${tenantSlug}/profissional`}>
+              <Button>
+                <LayoutDashboard size={16} />
+                Profissional
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
     </header>
   );
 }
-

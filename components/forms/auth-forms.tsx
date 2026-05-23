@@ -9,7 +9,7 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
-import { resetSchema, signupSchema, simpleLoginSchema } from "@/lib/validations/auth";
+import { loginSchema, resetSchema, signupSchema, simpleLoginSchema } from "@/lib/validations/auth";
 
 export function LoginForm() {
   const router = useRouter();
@@ -228,6 +228,78 @@ export function ResetPasswordForm() {
   );
 }
 
+export function ProfessionalLoginForm({ tenantSlug }: { tenantSlug: string }) {
+  const router = useRouter();
+  const form = useForm<z.infer<typeof loginSchema>>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: "", password: "" }
+  });
+
+  async function onSubmit(values: z.infer<typeof loginSchema>) {
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithPassword(values);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    const {
+      data: { user }
+    } = await supabase.auth.getUser();
+
+    const { data: profile } = user
+      ? await supabase
+          .from("users")
+          .select("tipo_usuario, estabelecimento_id")
+          .eq("id", user.id)
+          .maybeSingle()
+      : { data: null };
+
+    if (profile?.tipo_usuario !== "profissional") {
+      await supabase.auth.signOut();
+      toast.error("Este acesso e exclusivo para profissionais.");
+      return;
+    }
+
+    const { data: professional } = await supabase
+      .from("profissionais")
+      .select("id")
+      .eq("user_id", user!.id)
+      .eq("estabelecimento_id", profile.estabelecimento_id)
+      .maybeSingle();
+
+    if (!professional) {
+      await supabase.auth.signOut();
+      toast.error("Profissional sem vinculo de agenda. Vincule este usuario ao cadastro do profissional.");
+      return;
+    }
+
+    toast.success("Login realizado com sucesso.");
+    window.location.assign(`/${tenantSlug}/profissional`);
+  }
+
+  return (
+    <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
+      <Field icon={<Mail size={16} />} error={form.formState.errors.email?.message}>
+        <Input placeholder="email@empresa.com" autoComplete="email" {...form.register("email")} />
+      </Field>
+      <Field icon={<Lock size={16} />} error={form.formState.errors.password?.message}>
+        <Input
+          type="password"
+          placeholder="Senha"
+          autoComplete="current-password"
+          {...form.register("password")}
+        />
+      </Field>
+      <Button className="w-full" disabled={form.formState.isSubmitting}>
+        {form.formState.isSubmitting && <Loader2 className="animate-spin" size={16} />}
+        Entrar como profissional
+      </Button>
+    </form>
+  );
+}
+
 function Field({
   icon,
   error,
@@ -249,4 +321,3 @@ function Field({
     </label>
   );
 }
-

@@ -359,3 +359,54 @@ end;
 $$;
 
 grant execute on function public.cancel_guest_appointment(uuid, text, uuid) to anon, authenticated;
+
+-- 14. Acesso autenticado para profissionais
+alter type public.tipo_usuario add value if not exists 'profissional';
+
+alter table public.profissionais
+  add column if not exists user_id uuid references auth.users(id) on delete set null;
+
+create unique index if not exists profissionais_user_id_idx
+on public.profissionais(user_id)
+where user_id is not null;
+
+alter table public.users
+  drop constraint if exists users_apenas_administradores;
+
+alter table public.users
+  drop constraint if exists users_apenas_admins_ou_profissionais;
+
+alter table public.users
+  add constraint users_apenas_admins_ou_profissionais
+  check (tipo_usuario in ('administrador', 'profissional'));
+
+create or replace function public.is_professional()
+returns boolean
+language sql
+security definer
+set search_path = public
+as $$
+  select coalesce(public.current_user_role() = 'profissional', false);
+$$;
+
+create or replace function public.current_professional_id()
+returns uuid
+language sql
+security definer
+set search_path = public
+as $$
+  select id from public.profissionais where user_id = auth.uid();
+$$;
+
+drop policy if exists "profissional le proprio cadastro" on public.profissionais;
+create policy "profissional le proprio cadastro"
+on public.profissionais for select
+using (user_id = auth.uid());
+
+drop policy if exists "profissional le seus agendamentos" on public.agendamentos;
+create policy "profissional le seus agendamentos"
+on public.agendamentos for select
+using (
+  profissional_id = public.current_professional_id()
+  and estabelecimento_id = public.current_user_establishment()
+);

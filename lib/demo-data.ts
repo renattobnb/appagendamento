@@ -39,7 +39,8 @@ export const demoProfessionals: Database["public"]["Tables"]["profissionais"]["R
     especialidade: "Consultora senior",
     foto_url: null,
     ativo: true,
-    estabelecimento_id: DEMO_ESTABLISHMENT_ID
+    estabelecimento_id: DEMO_ESTABLISHMENT_ID,
+    user_id: null
   },
   {
     id: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
@@ -47,7 +48,8 @@ export const demoProfessionals: Database["public"]["Tables"]["profissionais"]["R
     especialidade: "Especialista operacional",
     foto_url: null,
     ativo: true,
-    estabelecimento_id: DEMO_ESTABLISHMENT_ID
+    estabelecimento_id: DEMO_ESTABLISHMENT_ID,
+    user_id: null
   }
 ];
 
@@ -69,4 +71,3 @@ export const demoAppointments = [
     users: { nome: "Cliente Demo" }
   }
 ];
-

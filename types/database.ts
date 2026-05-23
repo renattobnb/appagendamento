@@ -1,4 +1,4 @@
-export type UserRole = "administrador";
+export type UserRole = "administrador" | "profissional";
 export type AppointmentStatus = "confirmado" | "pendente" | "cancelado" | "finalizado";
 
 export type Database = {
@@ -69,6 +69,7 @@ export type Database = {
           foto_url: string | null;
           ativo: boolean;
           estabelecimento_id: string;
+          user_id: string | null;
         };
         Insert: {
           id?: string;
@@ -77,6 +78,7 @@ export type Database = {
           foto_url?: string | null;
           ativo?: boolean;
           estabelecimento_id: string;
+          user_id?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["profissionais"]["Insert"]>;
       };
@@ -135,4 +137,3 @@ export type Database = {
     };
   };
 };
-

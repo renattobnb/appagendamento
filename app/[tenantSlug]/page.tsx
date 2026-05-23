@@ -57,6 +57,11 @@ export default async function TenantHomePage({ params }: PageProps) {
                   Agendamento rápido <ArrowRight size={16} />
                 </Button>
               </Link>
+              <Link href={`/${tenantSlug}/profissional/login`}>
+                <Button variant="secondary" className="w-full sm:w-auto">
+                  Acesso profissional
+                </Button>
+              </Link>
             </div>
             <div className="mt-8 grid gap-3 text-sm text-muted-foreground sm:grid-cols-3">
               <span className="flex items-center gap-2"><ShieldCheck size={16} /> RLS e permissões</span>
