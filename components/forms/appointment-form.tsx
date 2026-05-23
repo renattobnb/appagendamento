@@ -9,7 +9,6 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
-import { createClient } from "@/lib/supabase/client";
 import { appointmentSchema } from "@/lib/validations/appointment";
 import type { Database } from "@/types/database";
 
@@ -34,6 +33,7 @@ export function AppointmentForm({
       profissional_id: professionals[0]?.id ?? "",
       data: new Date().toISOString().slice(0, 10),
       hora_inicio: "",
+      estabelecimento_id: estabelecimentoId,
       observacoes: ""
     }
   });
@@ -72,10 +72,6 @@ export function AppointmentForm({
   }, [watch.servico_id, watch.profissional_id, watch.data, form, estabelecimentoId]);
 
   async function onSubmit(values: z.infer<typeof appointmentSchema>) {
-    const supabase = createClient();
-    const {
-      data: { user }
-    } = await supabase.auth.getUser();
     const clienteNome = localStorage.getItem("agenda_cliente_nome") ?? undefined;
     const clienteTelefone = localStorage.getItem("agenda_cliente_whatsapp") ?? undefined;
 
@@ -105,8 +101,12 @@ export function AppointmentForm({
     form.reset({ ...values, hora_inicio: "" });
   }
 
+  function onInvalid() {
+    toast.error("Revise os dados do agendamento antes de confirmar.");
+  }
+
   return (
-    <form className="grid gap-4" onSubmit={form.handleSubmit(onSubmit)}>
+    <form className="grid gap-4" onSubmit={form.handleSubmit(onSubmit, onInvalid)}>
       <div className="grid gap-4 md:grid-cols-2">
         <label className="space-y-2">
           <span className="text-sm font-medium">Servico</span>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { CalendarPlus } from "lucide-react";
+import { CancelAppointmentButton } from "@/components/forms/cancel-appointment-button";
 import { Navbar } from "@/components/navbar";
 import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,10 @@ import { timeRange } from "@/lib/utils";
 import { getEstablishmentBySlug } from "@/lib/establishments";
 
 export const dynamic = "force-dynamic";
+
+function isFutureAppointment(appointment: { data: string; hora_inicio: string }) {
+  return new Date(`${appointment.data}T${appointment.hora_inicio}`) > new Date();
+}
 
 type ClientAppointment = {
   id: string;
@@ -65,8 +70,10 @@ export default async function ClientDashboardPage({ params }: PageProps) {
         })) as ClientAppointment[] | undefined
       : demoAppointments;
 
-  const upcoming = (appointments ?? []).filter((appointment) =>
-    ["confirmado", "pendente"].includes(appointment.status)
+  const upcoming = (appointments ?? []).filter(
+    (appointment) =>
+      ["confirmado", "pendente"].includes(appointment.status) &&
+      isFutureAppointment(appointment)
   );
 
   return (
@@ -95,7 +102,16 @@ export default async function ClientDashboardPage({ params }: PageProps) {
                         {appointment.data} - {timeRange(appointment.hora_inicio, appointment.hora_fim)}
                       </p>
                     </div>
-                    <StatusBadge status={appointment.status} />
+                    <div className="flex flex-col items-end gap-2">
+                      <StatusBadge status={appointment.status} />
+                      {["confirmado", "pendente"].includes(appointment.status) &&
+                        isFutureAppointment(appointment) && (
+                          <CancelAppointmentButton
+                            appointmentId={appointment.id}
+                            estabelecimentoId={establishment.id}
+                          />
+                        )}
+                    </div>
                   </div>
                 </div>
               ))}
