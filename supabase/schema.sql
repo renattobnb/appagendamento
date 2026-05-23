@@ -8,8 +8,9 @@ create table public.users (
   nome text not null,
   email text not null unique,
   telefone text,
-  tipo_usuario public.tipo_usuario not null default 'cliente',
-  created_at timestamptz not null default now()
+  tipo_usuario public.tipo_usuario not null default 'administrador',
+  created_at timestamptz not null default now(),
+  constraint users_apenas_administradores check (tipo_usuario = 'administrador')
 );
 
 create table public.servicos (
@@ -44,13 +45,11 @@ create table public.agendamentos (
   created_at timestamptz not null default now(),
   constraint hora_valida check (hora_fim > hora_inicio),
   constraint agendamento_cliente_identificado check (
-    cliente_id is not null
-    or (
-      cliente_nome is not null
-      and length(trim(cliente_nome)) >= 2
-      and cliente_telefone is not null
-      and length(trim(cliente_telefone)) >= 10
-    )
+    cliente_id is null
+    and cliente_nome is not null
+    and length(trim(cliente_nome)) >= 2
+    and cliente_telefone is not null
+    and length(trim(cliente_telefone)) >= 10
   )
 );
 
@@ -95,14 +94,10 @@ create policy "usuarios leem proprio perfil ou admin le todos"
 on public.users for select
 using (id = auth.uid() or public.is_admin());
 
-create policy "usuarios atualizam proprio perfil"
+create policy "admin atualiza proprio perfil"
 on public.users for update
-using (id = auth.uid())
-with check (id = auth.uid());
-
-create policy "usuarios criam proprio perfil"
-on public.users for insert
-with check (id = auth.uid());
+using (id = auth.uid() and tipo_usuario = 'administrador')
+with check (id = auth.uid() and tipo_usuario = 'administrador');
 
 create policy "admin gerencia usuarios"
 on public.users for all
@@ -136,25 +131,22 @@ on public.disponibilidade for all
 using (public.is_admin())
 with check (public.is_admin());
 
-create policy "cliente le seus agendamentos"
+create policy "admin le agendamentos"
 on public.agendamentos for select
-using (cliente_id = auth.uid() or public.is_admin());
+using (public.is_admin());
 
-create policy "cliente ou visitante cria agendamento"
+create policy "visitante cria agendamento com identificacao"
 on public.agendamentos for insert
 with check (
-  cliente_id = auth.uid()
-  or (
-    cliente_id is null
-    and cliente_nome is not null
-    and cliente_telefone is not null
-  )
+  cliente_id is null
+  and cliente_nome is not null
+  and cliente_telefone is not null
 );
 
-create policy "cliente cancela ou reagenda agendamento proprio"
+create policy "admin atualiza agendamentos"
 on public.agendamentos for update
-using (cliente_id = auth.uid() or public.is_admin())
-with check (cliente_id = auth.uid() or public.is_admin());
+using (public.is_admin())
+with check (public.is_admin());
 
 create policy "admin gerencia agendamentos"
 on public.agendamentos for all
@@ -209,15 +201,17 @@ security definer
 set search_path = public
 as $$
 begin
-  insert into public.users (id, nome, email, telefone, tipo_usuario)
-  values (
-    new.id,
-    coalesce(new.raw_user_meta_data->>'nome', split_part(new.email, '@', 1)),
-    new.email,
-    new.raw_user_meta_data->>'telefone',
-    coalesce((new.raw_user_meta_data->>'tipo_usuario')::public.tipo_usuario, 'cliente')
-  )
-  on conflict (id) do nothing;
+  if new.raw_user_meta_data->>'tipo_usuario' = 'administrador' then
+    insert into public.users (id, nome, email, telefone, tipo_usuario)
+    values (
+      new.id,
+      coalesce(new.raw_user_meta_data->>'nome', split_part(new.email, '@', 1)),
+      new.email,
+      new.raw_user_meta_data->>'telefone',
+      'administrador'
+    )
+    on conflict (id) do nothing;
+  end if;
 
   return new;
 end;

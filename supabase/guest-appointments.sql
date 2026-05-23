@@ -11,23 +11,19 @@ alter table public.agendamentos
 alter table public.agendamentos
   add constraint agendamento_cliente_identificado
   check (
-    cliente_id is not null
-    or (
-      cliente_nome is not null
-      and length(trim(cliente_nome)) >= 2
-      and cliente_telefone is not null
-      and length(trim(cliente_telefone)) >= 10
-    )
+    cliente_id is null
+    and cliente_nome is not null
+    and length(trim(cliente_nome)) >= 2
+    and cliente_telefone is not null
+    and length(trim(cliente_telefone)) >= 10
   );
 
 drop policy if exists "cliente cria agendamento proprio" on public.agendamentos;
-create policy "cliente ou visitante cria agendamento"
+drop policy if exists "cliente ou visitante cria agendamento" on public.agendamentos;
+create policy "visitante cria agendamento com identificacao"
 on public.agendamentos for insert
 with check (
-  cliente_id = auth.uid()
-  or (
-    cliente_id is null
-    and cliente_nome is not null
-    and cliente_telefone is not null
-  )
+  cliente_id is null
+  and cliente_nome is not null
+  and cliente_telefone is not null
 );

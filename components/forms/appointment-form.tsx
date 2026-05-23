@@ -18,10 +18,12 @@ type Professional = Database["public"]["Tables"]["profissionais"]["Row"];
 
 export function AppointmentForm({
   services,
-  professionals
+  professionals,
+  estabelecimentoId
 }: {
   services: Service[];
   professionals: Professional[];
+  estabelecimentoId: string;
 }) {
   const [slots, setSlots] = useState<string[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
@@ -57,7 +59,8 @@ export function AppointmentForm({
       const params = new URLSearchParams({
         servico_id: watch.servico_id,
         profissional_id: watch.profissional_id,
-        data: watch.data
+        data: watch.data,
+        estabelecimento_id: estabelecimentoId
       });
       const response = await fetch(`/api/appointments/available-slots?${params}`);
       const payload = await response.json();
@@ -66,7 +69,7 @@ export function AppointmentForm({
       setLoadingSlots(false);
     }
     loadSlots();
-  }, [watch.servico_id, watch.profissional_id, watch.data, form]);
+  }, [watch.servico_id, watch.profissional_id, watch.data, form, estabelecimentoId]);
 
   async function onSubmit(values: z.infer<typeof appointmentSchema>) {
     const supabase = createClient();
@@ -87,7 +90,8 @@ export function AppointmentForm({
       body: JSON.stringify({
         ...values,
         cliente_nome: clienteNome,
-        cliente_telefone: clienteTelefone
+        cliente_telefone: clienteTelefone,
+        estabelecimento_id: estabelecimentoId
       })
     });
 

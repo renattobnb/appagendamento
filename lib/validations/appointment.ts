@@ -7,5 +7,7 @@ export const appointmentSchema = z.object({
   hora_inicio: z.string().min(5),
   cliente_nome: z.string().min(2).optional(),
   cliente_telefone: z.string().min(10).optional(),
-  observacoes: z.string().max(500).optional()
+  observacoes: z.string().max(500).optional(),
+  estabelecimento_id: z.string().uuid()
 });
+

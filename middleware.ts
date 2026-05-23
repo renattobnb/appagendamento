@@ -2,7 +2,12 @@ import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { hasSupabaseEnv } from "@/lib/config";
 
-const protectedRoutes = ["/cliente", "/admin", "/agendar"];
+// Rotas que, quando acessadas sem prefixo de tenant, devem redirecionar para o tenant padrão
+const LEGACY_ROUTES = ["agendar", "admin", "cliente", "login", "cadastro", "recuperar-senha"];
+
+// Slug do tenant padrão para redirecionamentos de rotas legadas
+const DEFAULT_TENANT = "padrao";
+
 type CookieToSet = {
   name: string;
   value: string;
@@ -10,6 +15,17 @@ type CookieToSet = {
 };
 
 export async function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+  const segments = pathname.split("/").filter(Boolean);
+  const firstSegment = segments[0];
+
+  // Redireciona rotas legadas (sem slug de tenant) para o tenant padrão
+  if (LEGACY_ROUTES.includes(firstSegment)) {
+    const newUrl = request.nextUrl.clone();
+    newUrl.pathname = `/${DEFAULT_TENANT}${pathname}`;
+    return NextResponse.redirect(newUrl);
+  }
+
   if (!hasSupabaseEnv()) {
     return NextResponse.next();
   }
@@ -39,27 +55,41 @@ export async function middleware(request: NextRequest) {
     data: { user }
   } = await supabase.auth.getUser();
 
-  const isProtected = protectedRoutes.some((route) =>
-    request.nextUrl.pathname.startsWith(route)
-  );
+  const tenantSlug = segments[0];
+  const subRoute = segments[1];
+
+  const isProtected = ["admin", "cliente", "agendar"].includes(subRoute);
   const hasGuestAccess = Boolean(request.cookies.get("agenda_guest")?.value);
 
   if (isProtected && !user && !hasGuestAccess) {
     const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/login";
-    redirectUrl.searchParams.set("next", request.nextUrl.pathname);
+    redirectUrl.pathname = `/${tenantSlug}/login`;
+    redirectUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(redirectUrl);
   }
 
-  if (request.nextUrl.pathname.startsWith("/admin") && user) {
+  if (subRoute === "admin" && user) {
     const { data: profile } = await supabase
       .from("users")
-      .select("tipo_usuario")
+      .select("tipo_usuario, estabelecimento_id")
       .eq("id", user.id)
-      .single();
+      .maybeSingle();
 
-    if (profile?.tipo_usuario !== "administrador") {
-      return NextResponse.redirect(new URL("/cliente", request.url));
+    let hasAccess = false;
+    if (profile?.tipo_usuario === "administrador") {
+      const { data: establishment } = await supabase
+        .from("estabelecimentos")
+        .select("id")
+        .eq("slug", tenantSlug)
+        .maybeSingle();
+
+      if (establishment && profile.estabelecimento_id === establishment.id) {
+        hasAccess = true;
+      }
+    }
+
+    if (!hasAccess) {
+      return NextResponse.redirect(new URL(`/${tenantSlug}/cliente`, request.url));
     }
   }
 

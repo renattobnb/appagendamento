@@ -14,9 +14,6 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = await createClient();
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
 
   const parsed = appointmentSchema.safeParse(await request.json());
   if (!parsed.success) {
@@ -25,28 +22,14 @@ export async function POST(request: NextRequest) {
 
   const values = parsed.data;
   const clienteNome =
-    values.cliente_nome?.trim() ||
-    user?.user_metadata?.nome ||
-    user?.email?.split("@")[0] ||
-    null;
-  const clienteTelefone =
-    values.cliente_telefone?.trim() || user?.user_metadata?.telefone || null;
+    values.cliente_nome?.trim() || null;
+  const clienteTelefone = values.cliente_telefone?.trim() || null;
 
   if (!clienteNome || !clienteTelefone) {
     return NextResponse.json(
       { error: "Informe nome e WhatsApp para concluir o agendamento" },
       { status: 422 }
     );
-  }
-
-  if (user) {
-    await supabase.from("users").upsert({
-      id: user.id,
-      nome: user.user_metadata?.nome ?? user.email?.split("@")[0] ?? "Cliente",
-      email: user.email ?? `${user.id}@cliente.local`,
-      telefone: user.user_metadata?.telefone ?? null,
-      tipo_usuario: "cliente"
-    });
   }
 
   const startDate = parseISO(`${values.data}T${values.hora_inicio}:00`);
@@ -58,6 +41,7 @@ export async function POST(request: NextRequest) {
     .from("servicos")
     .select("duracao_minutos")
     .eq("id", values.servico_id)
+    .eq("estabelecimento_id", values.estabelecimento_id)
     .eq("ativo", true)
     .single();
 
@@ -71,6 +55,7 @@ export async function POST(request: NextRequest) {
     .from("disponibilidade")
     .select("hora_inicio,hora_fim")
     .eq("profissional_id", values.profissional_id)
+    .eq("estabelecimento_id", values.estabelecimento_id)
     .eq("dia_semana", getDay(new Date(`${values.data}T00:00:00`)))
     .single();
 
@@ -87,6 +72,7 @@ export async function POST(request: NextRequest) {
     .from("agendamentos")
     .select("id")
     .eq("profissional_id", values.profissional_id)
+    .eq("estabelecimento_id", values.estabelecimento_id)
     .eq("data", values.data)
     .in("status", ["confirmado", "pendente"])
     .lt("hora_inicio", horaFim)
@@ -99,7 +85,7 @@ export async function POST(request: NextRequest) {
   const { error } = await supabase
     .from("agendamentos")
     .insert({
-      cliente_id: user?.id ?? null,
+      cliente_id: null,
       cliente_nome: clienteNome,
       cliente_telefone: clienteTelefone,
       profissional_id: values.profissional_id,
@@ -108,7 +94,8 @@ export async function POST(request: NextRequest) {
       hora_inicio: values.hora_inicio,
       hora_fim: horaFim,
       status: "pendente",
-      observacoes: values.observacoes
+      observacoes: values.observacoes,
+      estabelecimento_id: values.estabelecimento_id
     });
 
   if (error) {

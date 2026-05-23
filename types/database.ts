@@ -1,9 +1,24 @@
-export type UserRole = "cliente" | "administrador" | "prestador";
+export type UserRole = "administrador";
 export type AppointmentStatus = "confirmado" | "pendente" | "cancelado" | "finalizado";
 
 export type Database = {
   public: {
     Tables: {
+      estabelecimentos: {
+        Row: {
+          id: string;
+          nome: string;
+          slug: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          nome: string;
+          slug: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["estabelecimentos"]["Insert"]>;
+      };
       users: {
         Row: {
           id: string;
@@ -11,6 +26,7 @@ export type Database = {
           email: string;
           telefone: string | null;
           tipo_usuario: UserRole;
+          estabelecimento_id: string;
           created_at: string;
         };
         Insert: {
@@ -19,6 +35,7 @@ export type Database = {
           email: string;
           telefone?: string | null;
           tipo_usuario?: UserRole;
+          estabelecimento_id: string;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["users"]["Insert"]>;
@@ -31,6 +48,7 @@ export type Database = {
           valor: number;
           duracao_minutos: number;
           ativo: boolean;
+          estabelecimento_id: string;
         };
         Insert: {
           id?: string;
@@ -39,6 +57,7 @@ export type Database = {
           valor: number;
           duracao_minutos: number;
           ativo?: boolean;
+          estabelecimento_id: string;
         };
         Update: Partial<Database["public"]["Tables"]["servicos"]["Insert"]>;
       };
@@ -49,6 +68,7 @@ export type Database = {
           especialidade: string | null;
           foto_url: string | null;
           ativo: boolean;
+          estabelecimento_id: string;
         };
         Insert: {
           id?: string;
@@ -56,6 +76,7 @@ export type Database = {
           especialidade?: string | null;
           foto_url?: string | null;
           ativo?: boolean;
+          estabelecimento_id: string;
         };
         Update: Partial<Database["public"]["Tables"]["profissionais"]["Insert"]>;
       };
@@ -72,6 +93,7 @@ export type Database = {
           hora_fim: string;
           status: AppointmentStatus;
           observacoes: string | null;
+          estabelecimento_id: string;
           created_at: string;
         };
         Insert: {
@@ -86,6 +108,7 @@ export type Database = {
           hora_fim: string;
           status?: AppointmentStatus;
           observacoes?: string | null;
+          estabelecimento_id: string;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["agendamentos"]["Insert"]>;
@@ -97,6 +120,7 @@ export type Database = {
           dia_semana: number;
           hora_inicio: string;
           hora_fim: string;
+          estabelecimento_id: string;
         };
         Insert: {
           id?: string;
@@ -104,9 +128,11 @@ export type Database = {
           dia_semana: number;
           hora_inicio: string;
           hora_fim: string;
+          estabelecimento_id: string;
         };
         Update: Partial<Database["public"]["Tables"]["disponibilidade"]["Insert"]>;
       };
     };
   };
 };
+

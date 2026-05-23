@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
   const servicoId = searchParams.get("servico_id");
   const profissionalId = searchParams.get("profissional_id");
   const date = searchParams.get("data");
+  const estabelecimentoId = searchParams.get("estabelecimento_id");
 
   if (!servicoId || !profissionalId || !date) {
     return NextResponse.json({ error: "Parametros obrigatorios ausentes" }, { status: 400 });
@@ -19,21 +20,33 @@ export async function GET(request: NextRequest) {
   }
 
   const supabase = await createClient();
+
+  const serviceQuery = supabase
+    .from("servicos")
+    .select("duracao_minutos")
+    .eq("id", servicoId);
+  if (estabelecimentoId) serviceQuery.eq("estabelecimento_id", estabelecimentoId);
+
+  const availQuery = supabase
+    .from("disponibilidade")
+    .select("hora_inicio,hora_fim")
+    .eq("profissional_id", profissionalId)
+    .eq("dia_semana", getDay(new Date(`${date}T00:00:00`)));
+  if (estabelecimentoId) availQuery.eq("estabelecimento_id", estabelecimentoId);
+
+  const apptsQuery = supabase
+    .from("agendamentos")
+    .select("hora_inicio,hora_fim")
+    .eq("profissional_id", profissionalId)
+    .eq("data", date)
+    .in("status", ["confirmado", "pendente"]);
+  if (estabelecimentoId) apptsQuery.eq("estabelecimento_id", estabelecimentoId);
+
   const [{ data: service }, { data: availability }, { data: appointments }] =
     await Promise.all([
-      supabase.from("servicos").select("duracao_minutos").eq("id", servicoId).single(),
-      supabase
-        .from("disponibilidade")
-        .select("hora_inicio,hora_fim")
-        .eq("profissional_id", profissionalId)
-        .eq("dia_semana", getDay(new Date(`${date}T00:00:00`)))
-        .single(),
-      supabase
-        .from("agendamentos")
-        .select("hora_inicio,hora_fim")
-        .eq("profissional_id", profissionalId)
-        .eq("data", date)
-        .in("status", ["confirmado", "pendente"])
+      serviceQuery.single(),
+      availQuery.single(),
+      apptsQuery
     ]);
 
   if (!service || !availability) {
