@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/card";
 import { hasSupabaseEnv } from "@/lib/config";
 import { demoAppointments } from "@/lib/demo-data";
 import { createClient } from "@/lib/supabase/server";
-import { timeRange } from "@/lib/utils";
+import { dateBR, timeRange } from "@/lib/utils";
 import { getEstablishmentBySlug } from "@/lib/establishments";
 
 export const dynamic = "force-dynamic";
@@ -99,7 +99,7 @@ export default async function ClientDashboardPage({ params }: PageProps) {
                     <div>
                       <p className="font-semibold">{appointment.servicos?.nome}</p>
                       <p className="text-sm text-muted-foreground">
-                        {appointment.data} - {timeRange(appointment.hora_inicio, appointment.hora_fim)}
+                        {dateBR(appointment.data)} - {timeRange(appointment.hora_inicio, appointment.hora_fim)}
                       </p>
                     </div>
                     <div className="flex flex-col items-end gap-2">
@@ -140,7 +140,7 @@ export default async function ClientDashboardPage({ params }: PageProps) {
                     <tr key={appointment.id} className="border-b last:border-0">
                       <td className="py-3">{appointment.servicos?.nome}</td>
                       <td className="py-3">{appointment.profissionais?.nome}</td>
-                      <td className="py-3">{appointment.data}</td>
+                      <td className="py-3">{dateBR(appointment.data)}</td>
                       <td className="py-3">{timeRange(appointment.hora_inicio, appointment.hora_fim)}</td>
                       <td className="py-3"><StatusBadge status={appointment.status} /></td>
                     </tr>

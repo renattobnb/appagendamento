@@ -15,3 +15,9 @@ export function currency(value: number) {
 export function timeRange(start: string, end: string) {
   return `${start.slice(0, 5)} - ${end.slice(0, 5)}`;
 }
+
+export function dateBR(date: string) {
+  const [year, month, day] = date.split("-");
+  if (!year || !month || !day) return date;
+  return `${day}/${month}/${year}`;
+}

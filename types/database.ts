@@ -95,6 +95,9 @@ export type Database = {
           hora_fim: string;
           status: AppointmentStatus;
           observacoes: string | null;
+          cancelado_por: string | null;
+          motivo_cancelamento: string | null;
+          cancelado_em: string | null;
           estabelecimento_id: string;
           created_at: string;
         };
@@ -110,6 +113,9 @@ export type Database = {
           hora_fim: string;
           status?: AppointmentStatus;
           observacoes?: string | null;
+          cancelado_por?: string | null;
+          motivo_cancelamento?: string | null;
+          cancelado_em?: string | null;
           estabelecimento_id: string;
           created_at?: string;
         };

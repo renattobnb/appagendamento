@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { CalendarDays } from "lucide-react";
+import { ProfessionalCancelButton } from "@/components/forms/professional-cancel-button";
 import { Navbar } from "@/components/navbar";
 import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { hasSupabaseEnv } from "@/lib/config";
 import { getEstablishmentBySlug } from "@/lib/establishments";
 import { createClient } from "@/lib/supabase/server";
-import { timeRange } from "@/lib/utils";
+import { dateBR, timeRange } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,7 @@ type ProfessionalAppointment = {
   hora_fim: string;
   status: "confirmado" | "pendente" | "cancelado" | "finalizado";
   observacoes: string | null;
+  motivo_cancelamento?: string | null;
   servicos?: { nome: string | null; valor: number | null } | null;
 };
 
@@ -75,7 +77,7 @@ export default async function ProfessionalDashboardPage({ params }: PageProps) {
 
   const { data: appointments } = await supabase
     .from("agendamentos")
-    .select("id,cliente_nome,cliente_telefone,data,hora_inicio,hora_fim,status,observacoes,servicos(nome,valor)")
+    .select("id,cliente_nome,cliente_telefone,data,hora_inicio,hora_fim,status,observacoes,motivo_cancelamento,servicos(nome,valor)")
     .eq("profissional_id", professional.id)
     .eq("estabelecimento_id", establishment.id)
     .order("data", { ascending: true })
@@ -126,6 +128,7 @@ export default async function ProfessionalDashboardPage({ params }: PageProps) {
                   <th className="py-3 font-medium">Horario</th>
                   <th className="py-3 font-medium">Status</th>
                   <th className="py-3 font-medium">Observacoes</th>
+                  <th className="py-3 text-right font-medium">Acao</th>
                 </tr>
               </thead>
               <tbody>
@@ -134,15 +137,21 @@ export default async function ProfessionalDashboardPage({ params }: PageProps) {
                     <td className="py-3">{appointment.cliente_nome ?? "Cliente"}</td>
                     <td className="py-3">{appointment.cliente_telefone ?? "-"}</td>
                     <td className="py-3">{appointment.servicos?.nome ?? "-"}</td>
-                    <td className="py-3">{appointment.data}</td>
+                    <td className="py-3">{dateBR(appointment.data)}</td>
                     <td className="py-3">{timeRange(appointment.hora_inicio, appointment.hora_fim)}</td>
                     <td className="py-3"><StatusBadge status={appointment.status} /></td>
                     <td className="py-3">{appointment.observacoes || "-"}</td>
+                    <td className="py-3 text-right">
+                      {["confirmado", "pendente"].includes(appointment.status) &&
+                        new Date(`${appointment.data}T${appointment.hora_inicio}`) > new Date() && (
+                          <ProfessionalCancelButton appointmentId={appointment.id} />
+                        )}
+                    </td>
                   </tr>
                 ))}
                 {activeAppointments.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-muted-foreground">
+                    <td colSpan={8} className="py-8 text-center text-muted-foreground">
                       Nenhum atendimento agendado para voce.
                     </td>
                   </tr>

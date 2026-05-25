@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { hasSupabaseEnv } from "@/lib/config";
 import { demoAppointments, demoProfessionals, demoServices } from "@/lib/demo-data";
 import { createClient } from "@/lib/supabase/server";
-import { currency, timeRange } from "@/lib/utils";
+import { currency, dateBR, timeRange } from "@/lib/utils";
 import { getEstablishmentBySlug } from "@/lib/establishments";
 
 export const dynamic = "force-dynamic";
@@ -104,7 +104,7 @@ export default async function AdminDashboardPage({ params }: PageProps) {
                       <td className="py-3">{appointment.cliente_nome ?? "Visitante"}</td>
                       <td className="py-3">{appointment.servicos?.nome}</td>
                       <td className="py-3">{appointment.profissionais?.nome}</td>
-                      <td className="py-3">{appointment.data}</td>
+                      <td className="py-3">{dateBR(appointment.data)}</td>
                       <td className="py-3">{timeRange(appointment.hora_inicio, appointment.hora_fim)}</td>
                       <td className="py-3"><StatusBadge status={appointment.status} /></td>
                     </tr>
