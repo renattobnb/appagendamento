@@ -228,6 +228,76 @@ export function ResetPasswordForm() {
   );
 }
 
+export function AdminLoginForm({ tenantSlug }: { tenantSlug: string }) {
+  const router = useRouter();
+  const form = useForm<z.infer<typeof loginSchema>>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: "", password: "" }
+  });
+
+  async function onSubmit(values: z.infer<typeof loginSchema>) {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+
+    const { error } = await supabase.auth.signInWithPassword(values);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    const {
+      data: { user }
+    } = await supabase.auth.getUser();
+
+    const { data: profile } = user
+      ? await supabase
+          .from("users")
+          .select("tipo_usuario, estabelecimento_id")
+          .eq("id", user.id)
+          .maybeSingle()
+      : { data: null };
+
+    const { data: establishment } = profile?.estabelecimento_id
+      ? await supabase
+          .from("estabelecimentos")
+          .select("slug")
+          .eq("id", profile.estabelecimento_id)
+          .maybeSingle()
+      : { data: null };
+
+    if (profile?.tipo_usuario !== "administrador" || establishment?.slug !== tenantSlug) {
+      await supabase.auth.signOut();
+      toast.error("Este usuario nao tem acesso administrativo neste estabelecimento.");
+      return;
+    }
+
+    toast.success("Acesso administrativo liberado.");
+    router.refresh();
+    router.push(`/${tenantSlug}/admin`);
+  }
+
+  return (
+    <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
+      <Field icon={<Mail size={16} />} error={form.formState.errors.email?.message}>
+        <Input placeholder="email@empresa.com" autoComplete="email" {...form.register("email")} />
+      </Field>
+      <Field icon={<Lock size={16} />} error={form.formState.errors.password?.message}>
+        <Input
+          type="password"
+          placeholder="Senha"
+          autoComplete="current-password"
+          {...form.register("password")}
+        />
+      </Field>
+      <Button className="w-full" disabled={form.formState.isSubmitting}>
+        {form.formState.isSubmitting && <Loader2 className="animate-spin" size={16} />}
+        Entrar no painel administrativo
+      </Button>
+    </form>
+  );
+}
+
 export function ProfessionalLoginForm({ tenantSlug }: { tenantSlug: string }) {
   const router = useRouter();
   const form = useForm<z.infer<typeof loginSchema>>({

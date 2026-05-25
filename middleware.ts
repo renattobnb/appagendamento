@@ -58,17 +58,25 @@ export async function middleware(request: NextRequest) {
   const tenantSlug = segments[0];
   const subRoute = segments[1];
 
+  const isAdminLogin = subRoute === "admin" && segments[2] === "login";
   const isProtected = ["admin", "cliente", "agendar"].includes(subRoute);
   const hasGuestAccess = Boolean(request.cookies.get("agenda_guest")?.value);
 
-  if (isProtected && !user && !hasGuestAccess) {
+  if (subRoute === "admin" && !isAdminLogin && !user) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = `/${tenantSlug}/admin/login`;
+    redirectUrl.searchParams.set("next", pathname);
+    return NextResponse.redirect(redirectUrl);
+  }
+
+  if (isProtected && subRoute !== "admin" && !user && !hasGuestAccess) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = `/${tenantSlug}/login`;
     redirectUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(redirectUrl);
   }
 
-  if (subRoute === "admin" && user) {
+  if (subRoute === "admin" && !isAdminLogin && user) {
     const { data: profile } = await supabase
       .from("users")
       .select("tipo_usuario, estabelecimento_id")
@@ -89,7 +97,7 @@ export async function middleware(request: NextRequest) {
     }
 
     if (!hasAccess) {
-      return NextResponse.redirect(new URL(`/${tenantSlug}/cliente`, request.url));
+      return NextResponse.redirect(new URL(`/${tenantSlug}/admin/login`, request.url));
     }
   }
 
