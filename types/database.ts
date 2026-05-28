@@ -82,6 +82,21 @@ export type Database = {
         };
         Update: Partial<Database["public"]["Tables"]["profissionais"]["Insert"]>;
       };
+      profissional_servicos: {
+        Row: {
+          profissional_id: string;
+          servico_id: string;
+          estabelecimento_id: string;
+          created_at: string;
+        };
+        Insert: {
+          profissional_id: string;
+          servico_id: string;
+          estabelecimento_id: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["profissional_servicos"]["Insert"]>;
+      };
       agendamentos: {
         Row: {
           id: string;

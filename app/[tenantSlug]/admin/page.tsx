@@ -45,6 +45,10 @@ type AvailabilityRow = Database["public"]["Tables"]["disponibilidade"]["Row"] & 
 };
 
 type EstablishmentRow = Database["public"]["Tables"]["estabelecimentos"]["Row"];
+type ProfessionalServiceRow = Database["public"]["Tables"]["profissional_servicos"]["Row"] & {
+  profissionais?: { nome: string | null } | { nome: string | null }[] | null;
+  servicos?: { nome: string | null } | { nome: string | null }[] | null;
+};
 
 function relatedProfessionalName(availability: AvailabilityRow) {
   const professional = Array.isArray(availability.profissionais)
@@ -52,6 +56,14 @@ function relatedProfessionalName(availability: AvailabilityRow) {
     : availability.profissionais;
 
   return professional?.nome ?? "Profissional";
+}
+
+function relationName<T extends { nome: string | null }>(
+  value: T | T[] | null | undefined,
+  fallback: string
+) {
+  const item = Array.isArray(value) ? value[0] : value;
+  return item?.nome ?? fallback;
 }
 
 export default async function AdminDashboardPage({ params }: PageProps) {
@@ -70,7 +82,8 @@ export default async function AdminDashboardPage({ params }: PageProps) {
     { data: professionals },
     { data: users },
     { data: availability },
-    { data: establishments }
+    { data: establishments },
+    { data: professionalServices }
   ] =
     supabase
       ? await Promise.all([
@@ -88,7 +101,12 @@ export default async function AdminDashboardPage({ params }: PageProps) {
             .eq("estabelecimento_id", establishment.id)
             .order("dia_semana", { ascending: true })
             .order("hora_inicio", { ascending: true }),
-          supabase.from("estabelecimentos").select("*").order("nome")
+          supabase.from("estabelecimentos").select("*").order("nome"),
+          supabase
+            .from("profissional_servicos")
+            .select("*, profissionais(nome), servicos(nome)")
+            .eq("estabelecimento_id", establishment.id)
+            .order("created_at", { ascending: false })
         ])
       : [
           { data: demoAppointments },
@@ -96,10 +114,12 @@ export default async function AdminDashboardPage({ params }: PageProps) {
           { data: demoProfessionals },
           { data: [{ id: "demo", nome: "Cliente Demo" }] },
           { data: [] },
-          { data: [establishment] }
+          { data: [establishment] },
+          { data: [] }
         ];
   const availabilityRows = (availability ?? []) as AvailabilityRow[];
   const establishmentRows = (establishments ?? []) as EstablishmentRow[];
+  const professionalServiceRows = (professionalServices ?? []) as ProfessionalServiceRow[];
 
   const confirmed = (appointments ?? []).filter((item) => item.status !== "cancelado");
   const revenue = confirmed.reduce((sum, item) => sum + Number(item.servicos?.valor ?? 0), 0);
@@ -161,6 +181,39 @@ export default async function AdminDashboardPage({ params }: PageProps) {
       hora_fim: String(formData.get("hora_fim")),
       estabelecimento_id: establishmentId
     });
+    revalidatePath(`/${tenantSlug}/admin`);
+  }
+
+  async function createProfessionalService(formData: FormData) {
+    "use server";
+    const supabase = await createClient();
+    const profissionalId = String(formData.get("profissional_id") ?? "");
+    const servicoId = String(formData.get("servico_id") ?? "");
+
+    if (!profissionalId || !servicoId) return;
+
+    await supabase.from("profissional_servicos").upsert({
+      profissional_id: profissionalId,
+      servico_id: servicoId,
+      estabelecimento_id: establishmentId
+    });
+    revalidatePath(`/${tenantSlug}/admin`);
+  }
+
+  async function deleteProfessionalService(formData: FormData) {
+    "use server";
+    const supabase = await createClient();
+    const profissionalId = String(formData.get("profissional_id") ?? "");
+    const servicoId = String(formData.get("servico_id") ?? "");
+
+    if (!profissionalId || !servicoId) return;
+
+    await supabase
+      .from("profissional_servicos")
+      .delete()
+      .eq("profissional_id", profissionalId)
+      .eq("servico_id", servicoId)
+      .eq("estabelecimento_id", establishmentId);
     revalidatePath(`/${tenantSlug}/admin`);
   }
 
@@ -373,6 +426,73 @@ export default async function AdminDashboardPage({ params }: PageProps) {
               {(services ?? []).length === 0 && (
                 <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
                   Nenhum servico cadastrado.
+                </p>
+              )}
+            </div>
+          </Card>
+
+          <Card>
+            <div className="mb-4 flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
+              <div>
+                <h2 className="text-lg font-semibold">Servicos por profissional</h2>
+                <p className="text-sm text-muted-foreground">
+                  Defina quais servicos cada profissional pode atender.
+                </p>
+              </div>
+              <span className="text-sm text-muted-foreground">{professionalServiceRows.length} vinculos</span>
+            </div>
+            <form
+              action={createProfessionalService}
+              className="mb-3 grid gap-3 rounded-lg border border-dashed p-3 lg:grid-cols-[1fr_1fr_auto]"
+            >
+              <Select name="profissional_id" required defaultValue="" aria-label="Profissional">
+                <option value="" disabled>
+                  Profissional
+                </option>
+                {(professionals ?? []).map((professional) => (
+                  <option key={professional.id} value={professional.id}>
+                    {professional.nome}
+                  </option>
+                ))}
+              </Select>
+              <Select name="servico_id" required defaultValue="" aria-label="Servico">
+                <option value="" disabled>
+                  Servico
+                </option>
+                {(services ?? []).map((service) => (
+                  <option key={service.id} value={service.id}>
+                    {service.nome}
+                  </option>
+                ))}
+              </Select>
+              <Button type="submit" disabled={(professionals ?? []).length === 0 || (services ?? []).length === 0}>
+                <Plus size={16} /> Vincular
+              </Button>
+            </form>
+            <div className="space-y-3">
+              {professionalServiceRows.map((link) => (
+                <div
+                  key={`${link.profissional_id}-${link.servico_id}`}
+                  className="flex flex-col justify-between gap-3 rounded-lg border p-3 sm:flex-row sm:items-center"
+                >
+                  <div>
+                    <p className="font-medium">{relationName(link.profissionais, "Profissional")}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {relationName(link.servicos, "Servico")}
+                    </p>
+                  </div>
+                  <form action={deleteProfessionalService}>
+                    <input type="hidden" name="profissional_id" value={link.profissional_id} />
+                    <input type="hidden" name="servico_id" value={link.servico_id} />
+                    <Button type="submit" variant="danger">
+                      <Trash2 size={16} /> Remover vinculo
+                    </Button>
+                  </form>
+                </div>
+              ))}
+              {professionalServiceRows.length === 0 && (
+                <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+                  Nenhum vinculo entre profissional e servico cadastrado.
                 </p>
               )}
             </div>

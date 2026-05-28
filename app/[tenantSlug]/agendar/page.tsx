@@ -1,6 +1,9 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ListChecks } from "lucide-react";
 import { Navbar } from "@/components/navbar";
 import { AppointmentForm } from "@/components/forms/appointment-form";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { hasSupabaseEnv } from "@/lib/config";
 import { demoProfessionals, demoServices } from "@/lib/demo-data";
@@ -32,7 +35,7 @@ export default async function SchedulePage({ params }: PageProps) {
           .order("nome"),
         supabase
           .from("profissionais")
-          .select("*")
+          .select("*, profissional_servicos(servico_id)")
           .eq("ativo", true)
           .eq("estabelecimento_id", establishment.id)
           .order("nome")
@@ -43,11 +46,19 @@ export default async function SchedulePage({ params }: PageProps) {
     <main>
       <Navbar />
       <section className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold">Novo agendamento</h1>
-          <p className="mt-2 text-muted-foreground">
-            Escolha o serviço, o profissional e um horário livre. Horários ocupados são bloqueados automaticamente.
-          </p>
+        <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+          <div>
+            <h1 className="text-3xl font-bold">Novo agendamento</h1>
+            <p className="mt-2 text-muted-foreground">
+              Escolha o servico, o profissional e um horario livre. Horarios ocupados sao bloqueados automaticamente.
+            </p>
+          </div>
+          <Link href={`/${tenantSlug}/cliente`}>
+            <Button variant="secondary" className="w-full sm:w-auto">
+              <ListChecks size={16} />
+              Ver meus agendamentos
+            </Button>
+          </Link>
         </div>
         <Card>
           <AppointmentForm

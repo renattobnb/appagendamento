@@ -42,14 +42,22 @@ export async function GET(request: NextRequest) {
     .in("status", ["confirmado", "pendente"]);
   if (estabelecimentoId) apptsQuery.eq("estabelecimento_id", estabelecimentoId);
 
-  const [{ data: service }, { data: availability }, { data: appointments }] =
+  const linkQuery = supabase
+    .from("profissional_servicos")
+    .select("profissional_id")
+    .eq("profissional_id", profissionalId)
+    .eq("servico_id", servicoId);
+  if (estabelecimentoId) linkQuery.eq("estabelecimento_id", estabelecimentoId);
+
+  const [{ data: service }, { data: availability }, { data: appointments }, { data: professionalService }] =
     await Promise.all([
       serviceQuery.single(),
       availQuery.single(),
-      apptsQuery
+      apptsQuery,
+      linkQuery.maybeSingle()
     ]);
 
-  if (!service || !availability) {
+  if (!service || !availability || !professionalService) {
     return NextResponse.json({ slots: [] });
   }
 

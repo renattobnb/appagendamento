@@ -13,7 +13,9 @@ import { appointmentSchema } from "@/lib/validations/appointment";
 import type { Database } from "@/types/database";
 
 type Service = Database["public"]["Tables"]["servicos"]["Row"];
-type Professional = Database["public"]["Tables"]["profissionais"]["Row"];
+type Professional = Database["public"]["Tables"]["profissionais"]["Row"] & {
+  profissional_servicos?: { servico_id: string }[] | null;
+};
 
 export function AppointmentForm({
   services,
@@ -44,6 +46,28 @@ export function AppointmentForm({
     () => services.find((service) => service.id === watch.servico_id),
     [services, watch.servico_id]
   );
+  const availableProfessionals = useMemo(
+    () =>
+      professionals.filter((professional) =>
+        (professional.profissional_servicos ?? []).some(
+          (serviceLink) => serviceLink.servico_id === watch.servico_id
+        )
+      ),
+    [professionals, watch.servico_id]
+  );
+
+  useEffect(() => {
+    if (!watch.servico_id) return;
+    const currentProfessionalIsAvailable = availableProfessionals.some(
+      (professional) => professional.id === watch.profissional_id
+    );
+
+    if (!currentProfessionalIsAvailable) {
+      form.setValue("profissional_id", availableProfessionals[0]?.id ?? "");
+      form.setValue("hora_inicio", "");
+      setSlots([]);
+    }
+  }, [availableProfessionals, form, watch.profissional_id, watch.servico_id]);
 
   useEffect(() => {
     setClientData({
@@ -120,8 +144,11 @@ export function AppointmentForm({
         </label>
         <label className="space-y-2">
           <span className="text-sm font-medium">Profissional</span>
-          <Select {...form.register("profissional_id")}>
-            {professionals.map((professional) => (
+          <Select {...form.register("profissional_id")} disabled={availableProfessionals.length === 0}>
+            {availableProfessionals.length === 0 && (
+              <option value="">Nenhum profissional atende este servico</option>
+            )}
+            {availableProfessionals.map((professional) => (
               <option key={professional.id} value={professional.id}>
                 {professional.nome}
               </option>

@@ -49,6 +49,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Servico indisponivel" }, { status: 404 });
   }
 
+  const { data: professionalService } = await supabase
+    .from("profissional_servicos")
+    .select("profissional_id")
+    .eq("profissional_id", values.profissional_id)
+    .eq("servico_id", values.servico_id)
+    .eq("estabelecimento_id", values.estabelecimento_id)
+    .maybeSingle();
+
+  if (!professionalService) {
+    return NextResponse.json(
+      { error: "Este profissional nao atende o servico selecionado" },
+      { status: 422 }
+    );
+  }
+
   const horaFim = calculateEndTime(values.data, values.hora_inicio, service.duracao_minutos);
 
   const { data: availability } = await supabase
