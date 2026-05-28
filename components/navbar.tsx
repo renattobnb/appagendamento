@@ -6,6 +6,7 @@ import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { ProfessionalNotifications } from "@/components/professional-notifications";
 import { createClient } from "@/lib/supabase/client";
 
 export function Navbar() {
@@ -107,6 +108,7 @@ export function Navbar() {
             <Sun className="hidden dark:block" size={18} />
             <Moon className="dark:hidden" size={18} />
           </Button>
+          {isProfessional && <ProfessionalNotifications />}
           {tenantSlug && isAdmin && (
             <Link className="hidden sm:block" href={`/${tenantSlug}/admin`}>
               <Button>

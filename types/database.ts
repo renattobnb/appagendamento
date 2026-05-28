@@ -140,6 +140,29 @@ export type Database = {
         };
         Update: Partial<Database["public"]["Tables"]["disponibilidade"]["Insert"]>;
       };
+      notificacoes_profissionais: {
+        Row: {
+          id: string;
+          profissional_id: string;
+          agendamento_id: string | null;
+          estabelecimento_id: string;
+          titulo: string;
+          mensagem: string;
+          lida: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          profissional_id: string;
+          agendamento_id?: string | null;
+          estabelecimento_id: string;
+          titulo: string;
+          mensagem: string;
+          lida?: boolean;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["notificacoes_profissionais"]["Insert"]>;
+      };
     };
   };
 };

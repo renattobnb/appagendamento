@@ -82,9 +82,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Horario ja ocupado" }, { status: 409 });
   }
 
+  const appointmentId = crypto.randomUUID();
+
   const { error } = await supabase
     .from("agendamentos")
     .insert({
+      id: appointmentId,
       cliente_id: null,
       cliente_nome: clienteNome,
       cliente_telefone: clienteTelefone,
@@ -101,6 +104,10 @@ export async function POST(request: NextRequest) {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  await supabase.rpc("notificar_profissional_agendamento", {
+    p_agendamento_id: appointmentId
+  });
 
   await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/appointment-confirmation`, {
     method: "POST",
