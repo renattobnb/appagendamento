@@ -24,6 +24,11 @@ on public.estabelecimentos for update
 using (public.is_admin())
 with check (public.is_admin());
 
+drop policy if exists "admin exclui estabelecimentos" on public.estabelecimentos;
+create policy "admin exclui estabelecimentos"
+on public.estabelecimentos for delete
+using (public.is_admin());
+
 -- 2. Inserir estabelecimento padrao para migracao de dados existentes
 insert into public.estabelecimentos (id, nome, slug)
 values ('11111111-1111-1111-1111-111111111111', 'Estabelecimento Padrão', 'padrao')

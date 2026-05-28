@@ -8,3 +8,8 @@ create policy "admin atualiza estabelecimentos"
 on public.estabelecimentos for update
 using (public.is_admin())
 with check (public.is_admin());
+
+drop policy if exists "admin exclui estabelecimentos" on public.estabelecimentos;
+create policy "admin exclui estabelecimentos"
+on public.estabelecimentos for delete
+using (public.is_admin());
