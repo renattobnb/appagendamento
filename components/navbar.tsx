@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { CalendarDays, LayoutDashboard, Moon, Sun } from "lucide-react";
+import { CalendarDays, LayoutDashboard, LogOut, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 
@@ -13,7 +13,20 @@ export function Navbar() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isProfessional, setIsProfessional] = useState(false);
   const params = useParams();
+  const router = useRouter();
   const tenantSlug = params?.tenantSlug as string | undefined;
+
+  async function handleSignOut() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    document.cookie = "agenda_guest=; path=/; max-age=0; SameSite=Lax";
+    localStorage.removeItem("agenda_cliente_nome");
+    localStorage.removeItem("agenda_cliente_whatsapp");
+    setIsAdmin(false);
+    setIsProfessional(false);
+    router.push(tenantSlug ? `/${tenantSlug}` : "/");
+    router.refresh();
+  }
 
   useEffect(() => {
     let mounted = true;
@@ -77,11 +90,6 @@ export function Navbar() {
             <Link className="rounded-md px-3 py-2 text-sm hover:bg-muted" href={`/${tenantSlug}/cliente`}>
               Agendamentos
             </Link>
-            {isAdmin && (
-              <Link className="rounded-md px-3 py-2 text-sm hover:bg-muted" href={`/${tenantSlug}/admin`}>
-                Admin
-              </Link>
-            )}
             {isProfessional && (
               <Link className="rounded-md px-3 py-2 text-sm hover:bg-muted" href={`/${tenantSlug}/profissional`}>
                 Profissional
@@ -114,6 +122,12 @@ export function Navbar() {
                 Profissional
               </Button>
             </Link>
+          )}
+          {tenantSlug && (isAdmin || isProfessional) && (
+            <Button variant="secondary" onClick={handleSignOut}>
+              <LogOut size={16} />
+              Sair
+            </Button>
           )}
         </div>
       </div>
