@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Calendar, Clock, Loader2, UserRound } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -26,6 +27,9 @@ export function AppointmentForm({
   professionals: Professional[];
   estabelecimentoId: string;
 }) {
+  const router = useRouter();
+  const params = useParams();
+  const tenantSlug = params?.tenantSlug as string | undefined;
   const [slots, setSlots] = useState<string[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const form = useForm<z.infer<typeof appointmentSchema>>({
@@ -123,6 +127,7 @@ export function AppointmentForm({
 
     toast.success("Agendamento criado e confirmacao enviada.");
     form.reset({ ...values, hora_inicio: "" });
+    router.push(tenantSlug ? `/${tenantSlug}/cliente` : "/cliente");
   }
 
   function onInvalid() {
