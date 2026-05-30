@@ -26,6 +26,7 @@ create table public.profissionais (
   id uuid primary key default gen_random_uuid(),
   nome text not null,
   especialidade text,
+  telefone text,
   foto_url text,
   ativo boolean not null default true
 );

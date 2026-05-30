@@ -38,6 +38,7 @@ on conflict (id) do nothing;
 alter table public.users add column if not exists estabelecimento_id uuid;
 alter table public.servicos add column if not exists estabelecimento_id uuid;
 alter table public.profissionais add column if not exists estabelecimento_id uuid;
+alter table public.profissionais add column if not exists telefone text;
 alter table public.agendamentos add column if not exists estabelecimento_id uuid;
 alter table public.disponibilidade add column if not exists estabelecimento_id uuid;
 

@@ -4,6 +4,8 @@ import { hasSupabaseEnv } from "@/lib/config";
 import { createClient } from "@/lib/supabase/server";
 import { appointmentSchema } from "@/lib/validations/appointment";
 import { calculateEndTime, toMinutes } from "@/lib/appointments";
+import { dateBR } from "@/lib/utils";
+import { sendWhatsAppMessage } from "@/lib/whatsapp";
 
 export async function POST(request: NextRequest) {
   if (!hasSupabaseEnv()) {
@@ -39,7 +41,7 @@ export async function POST(request: NextRequest) {
 
   const { data: service } = await supabase
     .from("servicos")
-    .select("duracao_minutos")
+    .select("duracao_minutos,nome")
     .eq("id", values.servico_id)
     .eq("estabelecimento_id", values.estabelecimento_id)
     .eq("ativo", true)
@@ -62,6 +64,18 @@ export async function POST(request: NextRequest) {
       { error: "Este profissional nao atende o servico selecionado" },
       { status: 422 }
     );
+  }
+
+  const { data: professional } = await supabase
+    .from("profissionais")
+    .select("nome,telefone")
+    .eq("id", values.profissional_id)
+    .eq("estabelecimento_id", values.estabelecimento_id)
+    .eq("ativo", true)
+    .maybeSingle();
+
+  if (!professional) {
+    return NextResponse.json({ error: "Profissional indisponivel" }, { status: 404 });
   }
 
   const horaFim = calculateEndTime(values.data, values.hora_inicio, service.duracao_minutos);
@@ -123,6 +137,24 @@ export async function POST(request: NextRequest) {
   await supabase.rpc("notificar_profissional_agendamento", {
     p_agendamento_id: appointmentId
   });
+
+  const whatsappMessage = [
+    "📅 Novo Agendamento",
+    "",
+    `Cliente: ${clienteNome}`,
+    `📞 Telefone: ${clienteTelefone}`,
+    "",
+    `Serviço: ${service.nome}`,
+    `Data: ${dateBR(values.data)}`,
+    `Horário: ${values.hora_inicio}`,
+    "",
+    `Observação: ${values.observacoes?.trim() || ""}`
+  ].join("\n");
+
+  await sendWhatsAppMessage({
+    to: professional.telefone,
+    message: whatsappMessage
+  }).catch(() => undefined);
 
   await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/appointment-confirmation`, {
     method: "POST",

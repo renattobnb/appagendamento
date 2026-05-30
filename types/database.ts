@@ -66,6 +66,7 @@ export type Database = {
           id: string;
           nome: string;
           especialidade: string | null;
+          telefone: string | null;
           foto_url: string | null;
           ativo: boolean;
           estabelecimento_id: string;
@@ -75,6 +76,7 @@ export type Database = {
           id?: string;
           nome: string;
           especialidade?: string | null;
+          telefone?: string | null;
           foto_url?: string | null;
           ativo?: boolean;
           estabelecimento_id: string;

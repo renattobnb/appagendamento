@@ -218,6 +218,7 @@ export default async function AdminDashboardPage({ params }: PageProps) {
     await supabase.from("profissionais").insert({
       nome: String(formData.get("nome") ?? "").trim(),
       especialidade: String(formData.get("especialidade") ?? "").trim() || null,
+      telefone: String(formData.get("telefone") ?? "").trim() || null,
       foto_url: String(formData.get("foto_url") ?? "").trim() || null,
       ativo: true,
       estabelecimento_id: establishmentId
@@ -342,6 +343,7 @@ export default async function AdminDashboardPage({ params }: PageProps) {
       .update({
         nome: String(formData.get("nome") ?? "").trim(),
         especialidade: String(formData.get("especialidade") ?? "").trim() || null,
+        telefone: String(formData.get("telefone") ?? "").trim() || null,
         foto_url: String(formData.get("foto_url") ?? "").trim() || null,
         ativo: String(formData.get("ativo")) === "true"
       })
@@ -624,11 +626,12 @@ export default async function AdminDashboardPage({ params }: PageProps) {
             </div>
             <AdminActionForm
               action={createProfessional}
-              className="mb-3 grid gap-3 rounded-lg border border-dashed p-3 xl:grid-cols-[1fr_0.8fr_1fr_auto]"
+              className="mb-3 grid gap-3 rounded-lg border border-dashed p-3 xl:grid-cols-[1fr_0.8fr_0.8fr_1fr_auto]"
               successMessage="Profissional cadastrado com sucesso."
             >
               <Input name="nome" placeholder="Novo profissional" aria-label="Novo profissional" required />
               <Input name="especialidade" placeholder="Especialidade" aria-label="Especialidade" />
+              <Input name="telefone" placeholder="WhatsApp" aria-label="WhatsApp do profissional" />
               <Input name="foto_url" placeholder="URL da foto" aria-label="Foto" />
               <Button type="submit" title="Cadastrar profissional">
                 <Plus size={16} /> Adicionar
@@ -637,7 +640,7 @@ export default async function AdminDashboardPage({ params }: PageProps) {
             <div className="space-y-3">
               {(professionals ?? []).map((professional) => (
                 <div key={professional.id} className="rounded-lg border p-3">
-                  <AdminActionForm action={updateProfessional} className="grid gap-3 xl:grid-cols-[1fr_0.8fr_1fr_0.45fr_auto]" successMessage="Profissional salvo com sucesso.">
+                  <AdminActionForm action={updateProfessional} className="grid gap-3 xl:grid-cols-[1fr_0.8fr_0.8fr_1fr_0.45fr_auto]" successMessage="Profissional salvo com sucesso.">
                     <input type="hidden" name="id" value={professional.id} />
                     <Input name="nome" defaultValue={professional.nome} aria-label="Nome do profissional" required />
                     <Input
@@ -645,6 +648,12 @@ export default async function AdminDashboardPage({ params }: PageProps) {
                       defaultValue={professional.especialidade ?? ""}
                       aria-label="Especialidade"
                       placeholder="Especialidade"
+                    />
+                    <Input
+                      name="telefone"
+                      defaultValue={professional.telefone ?? ""}
+                      aria-label="WhatsApp do profissional"
+                      placeholder="WhatsApp"
                     />
                     <Input name="foto_url" defaultValue={professional.foto_url ?? ""} aria-label="Foto" placeholder="URL da foto" />
                     <Select name="ativo" defaultValue={String(professional.ativo)} aria-label="Status do profissional">
