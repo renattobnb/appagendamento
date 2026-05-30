@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { CalendarDays, Download, Plus, Save, Trash2 } from "lucide-react";
 import { Navbar } from "@/components/navbar";
 import { AdminMetrics } from "@/components/dashboard/admin-metrics";
+import { AdminActionForm } from "@/components/forms/admin-action-form";
 import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -31,6 +32,16 @@ const weekdays = [
   ["6", "Sabado"]
 ];
 
+const chartColors = [
+  "bg-teal-500",
+  "bg-sky-500",
+  "bg-amber-500",
+  "bg-fuchsia-500",
+  "bg-emerald-500",
+  "bg-rose-500",
+  "bg-indigo-500"
+];
+
 function slugify(value: string) {
   return value
     .normalize("NFD")
@@ -48,6 +59,12 @@ type EstablishmentRow = Database["public"]["Tables"]["estabelecimentos"]["Row"];
 type ProfessionalServiceRow = Database["public"]["Tables"]["profissional_servicos"]["Row"] & {
   profissionais?: { nome: string | null } | { nome: string | null }[] | null;
   servicos?: { nome: string | null } | { nome: string | null }[] | null;
+};
+type ServicesChartDay = {
+  date: string;
+  total: number;
+  revenue: number;
+  professionals: Map<string, { count: number; revenue: number }>;
 };
 
 function relatedProfessionalName(availability: AvailabilityRow) {
@@ -91,7 +108,8 @@ export default async function AdminDashboardPage({ params }: PageProps) {
             .from("agendamentos")
             .select("*, servicos(nome, valor), profissionais(nome)")
             .eq("estabelecimento_id", establishment.id)
-            .order("data", { ascending: true }),
+            .order("data", { ascending: false })
+            .order("hora_inicio", { ascending: false }),
           supabase.from("servicos").select("*").eq("estabelecimento_id", establishment.id).order("nome"),
           supabase.from("profissionais").select("*").eq("estabelecimento_id", establishment.id).order("nome"),
           supabase.from("users").select("*").eq("estabelecimento_id", establishment.id).order("created_at", { ascending: false }),
@@ -99,6 +117,7 @@ export default async function AdminDashboardPage({ params }: PageProps) {
             .from("disponibilidade")
             .select("*, profissionais(nome)")
             .eq("estabelecimento_id", establishment.id)
+            .order("nome", { referencedTable: "profissionais", ascending: true })
             .order("dia_semana", { ascending: true })
             .order("hora_inicio", { ascending: true }),
           supabase.from("estabelecimentos").select("*").order("nome"),
@@ -129,6 +148,41 @@ export default async function AdminDashboardPage({ params }: PageProps) {
       total: (appointments ?? []).filter((item) => item.servico_id === service.id).length
     }))
     .sort((a, b) => b.total - a.total);
+  const professionalNames = Array.from(
+    new Set(
+      confirmed.map((appointment) => appointment.profissionais?.nome ?? "Sem profissional")
+    )
+  ).sort((a, b) => a.localeCompare(b));
+  const servicesByDayMap = confirmed.reduce<Map<string, ServicesChartDay>>((days, appointment) => {
+      const day = appointment.data;
+      const professionalName = appointment.profissionais?.nome ?? "Sem profissional";
+      const dayData = days.get(day) ?? {
+        date: day,
+        total: 0,
+        revenue: 0,
+        professionals: new Map<string, { count: number; revenue: number }>()
+      };
+      const serviceValue = Number(appointment.servicos?.valor ?? 0);
+      const professionalData = dayData.professionals.get(professionalName) ?? {
+        count: 0,
+        revenue: 0
+      };
+
+      dayData.total += 1;
+      dayData.revenue += serviceValue;
+      professionalData.count += 1;
+      professionalData.revenue += serviceValue;
+      dayData.professionals.set(professionalName, professionalData);
+      days.set(day, dayData);
+
+      return days;
+    }, new Map<string, ServicesChartDay>());
+  const servicesByDayAndProfessional = Array.from(servicesByDayMap.values())
+    .sort((a, b) => b.date.localeCompare(a.date));
+  const maxServicesInDay = Math.max(
+    1,
+    ...servicesByDayAndProfessional.map((day) => day.total)
+  );
 
   async function createEstablishment(formData: FormData) {
     "use server";
@@ -361,6 +415,66 @@ export default async function AdminDashboardPage({ params }: PageProps) {
           professionals={(professionals ?? []).filter((professional) => professional.ativo).length}
         />
 
+        <Card className="mt-6">
+          <div className="mb-5 flex flex-col justify-between gap-3 lg:flex-row lg:items-start">
+            <div>
+              <h2 className="text-lg font-semibold">Servicos por dia e profissional</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Quantidade de agendamentos por data, separado por profissional.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {professionalNames.map((name, index) => (
+                <span key={name} className="inline-flex items-center gap-2 text-xs text-muted-foreground">
+                  <span className={`size-3 rounded-sm ${chartColors[index % chartColors.length]}`} />
+                  {name}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {servicesByDayAndProfessional.map((day) => (
+              <div key={day.date} className="grid gap-2 lg:grid-cols-[120px_1fr_52px] lg:items-center">
+                <div>
+                  <p className="font-medium">{dateBR(day.date)}</p>
+                  <p className="text-xs text-muted-foreground">{day.total} servicos</p>
+                </div>
+                <div className="flex h-10 overflow-hidden rounded-md border bg-muted/35">
+                  {professionalNames.map((name, index) => {
+                    const professionalData = day.professionals.get(name);
+                    if (!professionalData?.count) return null;
+
+                    return (
+                      <div
+                        key={name}
+                        className={`${chartColors[index % chartColors.length]} flex min-w-24 items-center justify-center gap-1 truncate px-2 text-xs font-bold text-white`}
+                        style={{ width: `${Math.max(8, (professionalData.count / maxServicesInDay) * 100)}%` }}
+                        title={`${name}: ${professionalData.count} servicos - ${currency(professionalData.revenue)}`}
+                      >
+                        <span className="truncate">{name}</span>
+                        <span>({professionalData.count})</span>
+                        <span>{currency(professionalData.revenue)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <span className="text-right text-sm font-semibold">
+                  {day.total}
+                  <span className="block text-xs font-normal text-muted-foreground">
+                    {currency(day.revenue)}
+                  </span>
+                </span>
+              </div>
+            ))}
+            {servicesByDayAndProfessional.length === 0 && (
+              <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+                Nenhum servico agendado para exibir no grafico.
+              </p>
+            )}
+          </div>
+        </Card>
+
         <div className="mt-6 space-y-5">
           <Card>
             <div className="mb-4 flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
@@ -370,9 +484,10 @@ export default async function AdminDashboardPage({ params }: PageProps) {
               </div>
               <span className="text-sm text-muted-foreground">{services?.length ?? 0} registros</span>
             </div>
-            <form
+            <AdminActionForm
               action={createService}
               className="mb-3 grid gap-3 rounded-lg border border-dashed p-3 xl:grid-cols-[1.1fr_0.8fr_0.45fr_0.45fr_auto]"
+              successMessage="Servico cadastrado com sucesso."
             >
               <Input name="nome" placeholder="Novo servico" aria-label="Novo servico" required />
               <Input name="descricao" placeholder="Descricao" aria-label="Descricao do novo servico" />
@@ -389,11 +504,11 @@ export default async function AdminDashboardPage({ params }: PageProps) {
               <Button type="submit" title="Cadastrar servico">
                 <Plus size={16} /> Adicionar
               </Button>
-            </form>
+            </AdminActionForm>
             <div className="space-y-3">
               {(services ?? []).map((service) => (
                 <div key={service.id} className="rounded-lg border p-3">
-                  <form action={updateService} className="grid gap-3 xl:grid-cols-[1.1fr_0.8fr_0.45fr_0.45fr_0.5fr_auto]">
+                  <AdminActionForm action={updateService} className="grid gap-3 xl:grid-cols-[1.1fr_0.8fr_0.45fr_0.45fr_0.5fr_auto]" successMessage="Servico salvo com sucesso.">
                     <input type="hidden" name="id" value={service.id} />
                     <Input name="nome" defaultValue={service.nome} aria-label="Nome do servico" required />
                     <Input name="descricao" defaultValue={service.descricao ?? ""} aria-label="Descricao" placeholder="Descricao" />
@@ -414,13 +529,13 @@ export default async function AdminDashboardPage({ params }: PageProps) {
                     <Button type="submit" className="w-full xl:w-11" title="Salvar servico">
                       <Save size={16} />
                     </Button>
-                  </form>
-                  <form action={deleteService} className="mt-2 flex justify-end">
+                  </AdminActionForm>
+                  <AdminActionForm action={deleteService} className="mt-2 flex justify-end" confirmMessage="Deseja realmente excluir este servico?" successMessage="Servico excluido com sucesso.">
                     <input type="hidden" name="id" value={service.id} />
                     <Button type="submit" variant="danger" title="Excluir servico">
                       <Trash2 size={16} /> Excluir
                     </Button>
-                  </form>
+                  </AdminActionForm>
                 </div>
               ))}
               {(services ?? []).length === 0 && (
@@ -441,9 +556,10 @@ export default async function AdminDashboardPage({ params }: PageProps) {
               </div>
               <span className="text-sm text-muted-foreground">{professionalServiceRows.length} vinculos</span>
             </div>
-            <form
+            <AdminActionForm
               action={createProfessionalService}
               className="mb-3 grid gap-3 rounded-lg border border-dashed p-3 lg:grid-cols-[1fr_1fr_auto]"
+              successMessage="Vinculo cadastrado com sucesso."
             >
               <Select name="profissional_id" required defaultValue="" aria-label="Profissional">
                 <option value="" disabled>
@@ -468,7 +584,7 @@ export default async function AdminDashboardPage({ params }: PageProps) {
               <Button type="submit" disabled={(professionals ?? []).length === 0 || (services ?? []).length === 0}>
                 <Plus size={16} /> Vincular
               </Button>
-            </form>
+            </AdminActionForm>
             <div className="space-y-3">
               {professionalServiceRows.map((link) => (
                 <div
@@ -481,13 +597,13 @@ export default async function AdminDashboardPage({ params }: PageProps) {
                       {relationName(link.servicos, "Servico")}
                     </p>
                   </div>
-                  <form action={deleteProfessionalService}>
+                  <AdminActionForm action={deleteProfessionalService} confirmMessage="Deseja realmente remover este vinculo?" successMessage="Vinculo removido com sucesso.">
                     <input type="hidden" name="profissional_id" value={link.profissional_id} />
                     <input type="hidden" name="servico_id" value={link.servico_id} />
                     <Button type="submit" variant="danger">
                       <Trash2 size={16} /> Remover vinculo
                     </Button>
-                  </form>
+                  </AdminActionForm>
                 </div>
               ))}
               {professionalServiceRows.length === 0 && (
@@ -506,9 +622,10 @@ export default async function AdminDashboardPage({ params }: PageProps) {
               </div>
               <span className="text-sm text-muted-foreground">{professionals?.length ?? 0} registros</span>
             </div>
-            <form
+            <AdminActionForm
               action={createProfessional}
               className="mb-3 grid gap-3 rounded-lg border border-dashed p-3 xl:grid-cols-[1fr_0.8fr_1fr_auto]"
+              successMessage="Profissional cadastrado com sucesso."
             >
               <Input name="nome" placeholder="Novo profissional" aria-label="Novo profissional" required />
               <Input name="especialidade" placeholder="Especialidade" aria-label="Especialidade" />
@@ -516,11 +633,11 @@ export default async function AdminDashboardPage({ params }: PageProps) {
               <Button type="submit" title="Cadastrar profissional">
                 <Plus size={16} /> Adicionar
               </Button>
-            </form>
+            </AdminActionForm>
             <div className="space-y-3">
               {(professionals ?? []).map((professional) => (
                 <div key={professional.id} className="rounded-lg border p-3">
-                  <form action={updateProfessional} className="grid gap-3 xl:grid-cols-[1fr_0.8fr_1fr_0.45fr_auto]">
+                  <AdminActionForm action={updateProfessional} className="grid gap-3 xl:grid-cols-[1fr_0.8fr_1fr_0.45fr_auto]" successMessage="Profissional salvo com sucesso.">
                     <input type="hidden" name="id" value={professional.id} />
                     <Input name="nome" defaultValue={professional.nome} aria-label="Nome do profissional" required />
                     <Input
@@ -537,13 +654,13 @@ export default async function AdminDashboardPage({ params }: PageProps) {
                     <Button type="submit" className="w-full xl:w-11" title="Salvar profissional">
                       <Save size={16} />
                     </Button>
-                  </form>
-                  <form action={deleteProfessional} className="mt-2 flex justify-end">
+                  </AdminActionForm>
+                  <AdminActionForm action={deleteProfessional} className="mt-2 flex justify-end" confirmMessage="Deseja realmente excluir este profissional?" successMessage="Profissional excluido com sucesso.">
                     <input type="hidden" name="id" value={professional.id} />
                     <Button type="submit" variant="danger" title="Excluir profissional">
                       <Trash2 size={16} /> Excluir
                     </Button>
-                  </form>
+                  </AdminActionForm>
                 </div>
               ))}
               {(professionals ?? []).length === 0 && (
@@ -562,9 +679,10 @@ export default async function AdminDashboardPage({ params }: PageProps) {
               </div>
               <span className="text-sm text-muted-foreground">{availabilityRows.length} registros</span>
             </div>
-            <form
+            <AdminActionForm
               action={createAvailability}
               className="mb-3 grid gap-3 rounded-lg border border-dashed p-3 xl:grid-cols-[1fr_0.7fr_0.45fr_0.45fr_auto]"
+              successMessage="Disponibilidade cadastrada com sucesso."
             >
               <Select name="profissional_id" required defaultValue="" aria-label="Profissional">
                 <option value="" disabled>
@@ -588,11 +706,11 @@ export default async function AdminDashboardPage({ params }: PageProps) {
               <Button type="submit" disabled={(professionals ?? []).length === 0} title="Cadastrar disponibilidade">
                 <Plus size={16} /> Adicionar
               </Button>
-            </form>
+            </AdminActionForm>
             <div className="space-y-3">
               {availabilityRows.map((item) => (
                 <div key={item.id} className="rounded-lg border p-3">
-                  <form action={updateAvailability} className="grid gap-3 xl:grid-cols-[1fr_0.7fr_0.45fr_0.45fr_auto]">
+                  <AdminActionForm action={updateAvailability} className="grid gap-3 xl:grid-cols-[1fr_0.7fr_0.45fr_0.45fr_auto]" successMessage="Disponibilidade salva com sucesso.">
                     <input type="hidden" name="id" value={item.id} />
                     <Select name="profissional_id" defaultValue={item.profissional_id} aria-label="Profissional" required>
                       {(professionals ?? []).map((professional) => (
@@ -613,15 +731,15 @@ export default async function AdminDashboardPage({ params }: PageProps) {
                     <Button type="submit" className="w-full xl:w-11" title="Salvar disponibilidade">
                       <Save size={16} />
                     </Button>
-                  </form>
+                  </AdminActionForm>
                   <div className="mt-2 flex flex-col justify-between gap-2 text-sm text-muted-foreground sm:flex-row sm:items-center">
                     <span>{relatedProfessionalName(item)} atende neste horario.</span>
-                    <form action={deleteAvailability}>
+                    <AdminActionForm action={deleteAvailability} confirmMessage="Deseja realmente excluir esta disponibilidade?" successMessage="Disponibilidade excluida com sucesso.">
                       <input type="hidden" name="id" value={item.id} />
                       <Button type="submit" variant="danger" title="Excluir disponibilidade">
                         <Trash2 size={16} /> Excluir
                       </Button>
-                    </form>
+                    </AdminActionForm>
                   </div>
                 </div>
               ))}
@@ -641,30 +759,31 @@ export default async function AdminDashboardPage({ params }: PageProps) {
               </div>
               <span className="text-sm text-muted-foreground">{establishmentRows.length} registros</span>
             </div>
-            <form
+            <AdminActionForm
               action={createEstablishment}
               className="mb-3 grid gap-3 rounded-lg border border-dashed p-3 lg:grid-cols-[1fr_0.8fr_auto]"
+              successMessage="Estabelecimento cadastrado com sucesso."
             >
               <Input name="nome" placeholder="Novo estabelecimento" aria-label="Novo estabelecimento" required />
               <Input name="slug" placeholder="slug-da-url" aria-label="Slug" />
               <Button type="submit" title="Cadastrar estabelecimento">
                 <Plus size={16} /> Adicionar
               </Button>
-            </form>
+            </AdminActionForm>
             <div className="space-y-3">
               {establishmentRows.map((item) => (
                 <div key={item.id} className="rounded-lg border p-3">
-                  <form action={updateEstablishment} className="grid gap-3 lg:grid-cols-[1fr_0.8fr_auto]">
+                  <AdminActionForm action={updateEstablishment} className="grid gap-3 lg:grid-cols-[1fr_0.8fr_auto]" successMessage="Estabelecimento salvo com sucesso.">
                     <input type="hidden" name="id" value={item.id} />
                     <Input name="nome" defaultValue={item.nome} aria-label="Nome do estabelecimento" required />
                     <Input name="slug" defaultValue={item.slug} aria-label="Slug do estabelecimento" required />
                     <Button type="submit" className="w-full lg:w-11" title="Salvar estabelecimento">
                       <Save size={16} />
                     </Button>
-                  </form>
+                  </AdminActionForm>
                   <div className="mt-2 flex flex-col justify-between gap-2 text-sm text-muted-foreground sm:flex-row sm:items-center">
                     <span>{item.id === establishmentId ? "Estabelecimento atual" : `/${item.slug}`}</span>
-                    <form action={deleteEstablishment}>
+                    <AdminActionForm action={deleteEstablishment} confirmMessage="Deseja realmente excluir este estabelecimento?" successMessage="Estabelecimento excluido com sucesso.">
                       <input type="hidden" name="id" value={item.id} />
                       <Button
                         type="submit"
@@ -674,7 +793,7 @@ export default async function AdminDashboardPage({ params }: PageProps) {
                       >
                         <Trash2 size={16} /> Excluir
                       </Button>
-                    </form>
+                    </AdminActionForm>
                   </div>
                 </div>
               ))}
