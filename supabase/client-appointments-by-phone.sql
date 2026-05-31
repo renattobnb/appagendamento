@@ -37,8 +37,8 @@ as $$
   from public.agendamentos a
   join public.servicos s on s.id = a.servico_id
   join public.profissionais p on p.id = a.profissional_id
-  where regexp_replace(coalesce(a.cliente_telefone, ''), '\\D', '', 'g')
-    = regexp_replace(coalesce(telefone_param, ''), '\\D', '', 'g')
+  where regexp_replace(regexp_replace(coalesce(a.cliente_telefone, ''), '\\D', '', 'g'), '^55', '')
+    = regexp_replace(regexp_replace(coalesce(telefone_param, ''), '\\D', '', 'g'), '^55', '')
   order by a.data desc, a.hora_inicio desc;
 $$;
 
