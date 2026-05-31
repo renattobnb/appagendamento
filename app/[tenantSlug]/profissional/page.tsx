@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { CalendarDays } from "lucide-react";
 import { ProfessionalCancelButton } from "@/components/forms/professional-cancel-button";
+import { ProfessionalConfirmButton } from "@/components/forms/professional-confirm-button";
 import { Navbar } from "@/components/navbar";
 import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
@@ -144,7 +145,12 @@ export default async function ProfessionalDashboardPage({ params }: PageProps) {
                     <td className="py-3 text-right">
                       {["confirmado", "pendente"].includes(appointment.status) &&
                         new Date(`${appointment.data}T${appointment.hora_inicio}`) > new Date() && (
-                          <ProfessionalCancelButton appointmentId={appointment.id} />
+                          <div className="flex flex-wrap justify-end gap-2">
+                            {appointment.status === "pendente" && (
+                              <ProfessionalConfirmButton appointmentId={appointment.id} />
+                            )}
+                            <ProfessionalCancelButton appointmentId={appointment.id} />
+                          </div>
                         )}
                     </td>
                   </tr>
