@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ProfessionalNotifications } from "@/components/professional-notifications";
+import { hasSupabaseEnv } from "@/lib/config";
 import { createClient } from "@/lib/supabase/client";
 
 export function Navbar() {
@@ -18,8 +19,11 @@ export function Navbar() {
   const tenantSlug = params?.tenantSlug as string | undefined;
 
   async function handleSignOut() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
+    if (hasSupabaseEnv()) {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    }
+
     document.cookie = "agenda_guest=; path=/; max-age=0; SameSite=Lax";
     localStorage.removeItem("agenda_cliente_nome");
     localStorage.removeItem("agenda_cliente_whatsapp");
@@ -30,6 +34,10 @@ export function Navbar() {
   }
 
   useEffect(() => {
+    if (!hasSupabaseEnv()) {
+      return;
+    }
+
     let mounted = true;
     const supabase = createClient();
 
