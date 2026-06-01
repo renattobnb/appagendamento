@@ -67,6 +67,19 @@ type ServicesChartDay = {
   professionals: Map<string, { count: number; revenue: number }>;
 };
 
+type AdminActionResult = {
+  ok: boolean;
+  message?: string;
+};
+
+function actionSuccess(message?: string): AdminActionResult {
+  return { ok: true, message };
+}
+
+function actionFailure(message: string): AdminActionResult {
+  return { ok: false, message };
+}
+
 function relatedProfessionalName(availability: AvailabilityRow) {
   const professional = Array.isArray(availability.profissionais)
     ? availability.profissionais[0]
@@ -110,8 +123,8 @@ export default async function AdminDashboardPage({ params }: PageProps) {
             .eq("estabelecimento_id", establishment.id)
             .order("data", { ascending: false })
             .order("hora_inicio", { ascending: false }),
-          supabase.from("servicos").select("*").eq("estabelecimento_id", establishment.id).order("nome"),
-          supabase.from("profissionais").select("*").eq("estabelecimento_id", establishment.id).order("nome"),
+          supabase.from("servicos").select("*").eq("estabelecimento_id", establishment.id).eq("ativo", true).order("nome"),
+          supabase.from("profissionais").select("*").eq("estabelecimento_id", establishment.id).eq("ativo", true).order("nome"),
           supabase.from("users").select("*").eq("estabelecimento_id", establishment.id).order("created_at", { ascending: false }),
           supabase
             .from("disponibilidade")
@@ -261,15 +274,27 @@ export default async function AdminDashboardPage({ params }: PageProps) {
     const profissionalId = String(formData.get("profissional_id") ?? "");
     const servicoId = String(formData.get("servico_id") ?? "");
 
-    if (!profissionalId || !servicoId) return;
+    if (!profissionalId || !servicoId) {
+      return actionFailure("Vinculo invalido para exclusao.");
+    }
 
-    await supabase
+    const { error, count } = await supabase
       .from("profissional_servicos")
-      .delete()
+      .delete({ count: "exact" })
       .eq("profissional_id", profissionalId)
       .eq("servico_id", servicoId)
       .eq("estabelecimento_id", establishmentId);
+
+    if (error) {
+      return actionFailure(error.message);
+    }
+
+    if (!count) {
+      return actionFailure("Nenhum vinculo foi removido. Atualize a pagina e tente novamente.");
+    }
+
     revalidatePath(`/${tenantSlug}/admin`);
+    return actionSuccess("Vinculo removido com sucesso.");
   }
 
   async function updateEstablishment(formData: FormData) {
@@ -292,11 +317,27 @@ export default async function AdminDashboardPage({ params }: PageProps) {
     const supabase = await createClient();
     const id = String(formData.get("id") ?? "");
 
-    if (!id || id === establishmentId) return;
+    if (!id) {
+      return actionFailure("Estabelecimento invalido para exclusao.");
+    }
 
-    await supabase.from("estabelecimentos").delete().eq("id", id);
+    if (id === establishmentId) {
+      return actionFailure("Nao e possivel excluir o estabelecimento atual.");
+    }
+
+    const { error, count } = await supabase.from("estabelecimentos").delete({ count: "exact" }).eq("id", id);
+
+    if (error) {
+      return actionFailure(error.message);
+    }
+
+    if (!count) {
+      return actionFailure("Nenhum estabelecimento foi excluido. Atualize a pagina e tente novamente.");
+    }
+
     revalidatePath(`/${tenantSlug}/admin`);
     revalidatePath("/");
+    return actionSuccess("Estabelecimento excluido com sucesso.");
   }
 
   async function updateService(formData: FormData) {
@@ -325,10 +366,41 @@ export default async function AdminDashboardPage({ params }: PageProps) {
     const supabase = await createClient();
     const id = String(formData.get("id") ?? "");
 
-    if (!id) return;
+    if (!id) {
+      return actionFailure("Servico invalido para exclusao.");
+    }
 
-    await supabase.from("servicos").delete().eq("id", id).eq("estabelecimento_id", establishmentId);
+    const { error, count } = await supabase
+      .from("servicos")
+      .delete({ count: "exact" })
+      .eq("id", id)
+      .eq("estabelecimento_id", establishmentId);
+
+    if (error) {
+      if (error.code === "23503") {
+        const { error: archiveError } = await supabase
+          .from("servicos")
+          .update({ ativo: false })
+          .eq("id", id)
+          .eq("estabelecimento_id", establishmentId);
+
+        if (archiveError) {
+          return actionFailure(archiveError.message);
+        }
+
+        revalidatePath(`/${tenantSlug}/admin`);
+        return actionSuccess("Servico removido da lista e historico preservado.");
+      }
+
+      return actionFailure(error.message);
+    }
+
+    if (!count) {
+      return actionFailure("Nenhum servico foi excluido. Atualize a pagina e tente novamente.");
+    }
+
     revalidatePath(`/${tenantSlug}/admin`);
+    return actionSuccess("Servico excluido com sucesso.");
   }
 
   async function updateProfessional(formData: FormData) {
@@ -357,10 +429,41 @@ export default async function AdminDashboardPage({ params }: PageProps) {
     const supabase = await createClient();
     const id = String(formData.get("id") ?? "");
 
-    if (!id) return;
+    if (!id) {
+      return actionFailure("Profissional invalido para exclusao.");
+    }
 
-    await supabase.from("profissionais").delete().eq("id", id).eq("estabelecimento_id", establishmentId);
+    const { error, count } = await supabase
+      .from("profissionais")
+      .delete({ count: "exact" })
+      .eq("id", id)
+      .eq("estabelecimento_id", establishmentId);
+
+    if (error) {
+      if (error.code === "23503") {
+        const { error: archiveError } = await supabase
+          .from("profissionais")
+          .update({ ativo: false })
+          .eq("id", id)
+          .eq("estabelecimento_id", establishmentId);
+
+        if (archiveError) {
+          return actionFailure(archiveError.message);
+        }
+
+        revalidatePath(`/${tenantSlug}/admin`);
+        return actionSuccess("Profissional removido da lista e historico preservado.");
+      }
+
+      return actionFailure(error.message);
+    }
+
+    if (!count) {
+      return actionFailure("Nenhum profissional foi excluido. Atualize a pagina e tente novamente.");
+    }
+
     revalidatePath(`/${tenantSlug}/admin`);
+    return actionSuccess("Profissional excluido com sucesso.");
   }
 
   async function updateAvailability(formData: FormData) {
@@ -388,10 +491,26 @@ export default async function AdminDashboardPage({ params }: PageProps) {
     const supabase = await createClient();
     const id = String(formData.get("id") ?? "");
 
-    if (!id) return;
+    if (!id) {
+      return actionFailure("Disponibilidade invalida para exclusao.");
+    }
 
-    await supabase.from("disponibilidade").delete().eq("id", id).eq("estabelecimento_id", establishmentId);
+    const { error, count } = await supabase
+      .from("disponibilidade")
+      .delete({ count: "exact" })
+      .eq("id", id)
+      .eq("estabelecimento_id", establishmentId);
+
+    if (error) {
+      return actionFailure(error.message);
+    }
+
+    if (!count) {
+      return actionFailure("Nenhuma disponibilidade foi excluida. Atualize a pagina e tente novamente.");
+    }
+
     revalidatePath(`/${tenantSlug}/admin`);
+    return actionSuccess("Disponibilidade excluida com sucesso.");
   }
 
   return (
