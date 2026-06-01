@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { CalendarDays, Download, Plus, Save, Trash2 } from "lucide-react";
 import { Navbar } from "@/components/navbar";
@@ -106,6 +106,32 @@ export default async function AdminDashboardPage({ params }: PageProps) {
 
   const establishmentId = establishment.id;
   const supabase = hasSupabaseEnv() ? await createClient() : null;
+
+  if (!supabase) {
+    redirect(`/${tenantSlug}/admin/login`);
+  }
+
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect(`/${tenantSlug}/admin/login`);
+  }
+
+  const { data: adminProfile } = await supabase
+    .from("users")
+    .select("tipo_usuario, estabelecimento_id")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (
+    adminProfile?.tipo_usuario !== "administrador" ||
+    adminProfile.estabelecimento_id !== establishmentId
+  ) {
+    redirect(`/${tenantSlug}/admin/login`);
+  }
+
   const [
     { data: appointments },
     { data: services },

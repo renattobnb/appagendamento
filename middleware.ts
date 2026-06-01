@@ -16,6 +16,13 @@ type CookieToSet = {
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+
+  if (pathname !== pathname.toLowerCase()) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = pathname.toLowerCase();
+    return NextResponse.redirect(redirectUrl);
+  }
+
   const segments = pathname.split("/").filter(Boolean);
   const firstSegment = segments[0];
 
