@@ -370,37 +370,24 @@ export default async function AdminDashboardPage({ params }: PageProps) {
       return actionFailure("Servico invalido para exclusao.");
     }
 
-    const { error, count } = await supabase
+    const { data, error } = await supabase
       .from("servicos")
-      .delete({ count: "exact" })
+      .update({ ativo: false })
       .eq("id", id)
-      .eq("estabelecimento_id", establishmentId);
+      .eq("estabelecimento_id", establishmentId)
+      .select("id")
+      .maybeSingle();
 
     if (error) {
-      if (error.code === "23503") {
-        const { error: archiveError } = await supabase
-          .from("servicos")
-          .update({ ativo: false })
-          .eq("id", id)
-          .eq("estabelecimento_id", establishmentId);
-
-        if (archiveError) {
-          return actionFailure(archiveError.message);
-        }
-
-        revalidatePath(`/${tenantSlug}/admin`);
-        return actionSuccess("Servico removido da lista e historico preservado.");
-      }
-
       return actionFailure(error.message);
     }
 
-    if (!count) {
-      return actionFailure("Nenhum servico foi excluido. Atualize a pagina e tente novamente.");
+    if (!data) {
+      return actionFailure("Servico nao encontrado ou sem permissao para alterar.");
     }
 
     revalidatePath(`/${tenantSlug}/admin`);
-    return actionSuccess("Servico excluido com sucesso.");
+    return actionSuccess("Servico removido da lista e historico preservado.");
   }
 
   async function updateProfessional(formData: FormData) {
@@ -433,37 +420,24 @@ export default async function AdminDashboardPage({ params }: PageProps) {
       return actionFailure("Profissional invalido para exclusao.");
     }
 
-    const { error, count } = await supabase
+    const { data, error } = await supabase
       .from("profissionais")
-      .delete({ count: "exact" })
+      .update({ ativo: false })
       .eq("id", id)
-      .eq("estabelecimento_id", establishmentId);
+      .eq("estabelecimento_id", establishmentId)
+      .select("id")
+      .maybeSingle();
 
     if (error) {
-      if (error.code === "23503") {
-        const { error: archiveError } = await supabase
-          .from("profissionais")
-          .update({ ativo: false })
-          .eq("id", id)
-          .eq("estabelecimento_id", establishmentId);
-
-        if (archiveError) {
-          return actionFailure(archiveError.message);
-        }
-
-        revalidatePath(`/${tenantSlug}/admin`);
-        return actionSuccess("Profissional removido da lista e historico preservado.");
-      }
-
       return actionFailure(error.message);
     }
 
-    if (!count) {
-      return actionFailure("Nenhum profissional foi excluido. Atualize a pagina e tente novamente.");
+    if (!data) {
+      return actionFailure("Profissional nao encontrado ou sem permissao para alterar.");
     }
 
     revalidatePath(`/${tenantSlug}/admin`);
-    return actionSuccess("Profissional excluido com sucesso.");
+    return actionSuccess("Profissional removido da lista e historico preservado.");
   }
 
   async function updateAvailability(formData: FormData) {

@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, ReactNode, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 type AdminActionFormProps = {
@@ -18,6 +19,7 @@ export function AdminActionForm({
   confirmMessage,
   successMessage
 }: AdminActionFormProps) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -42,6 +44,7 @@ export function AdminActionForm({
         }
 
         toast.success(result?.message ?? successMessage);
+        router.refresh();
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "Nao foi possivel concluir a acao.");
       } finally {
