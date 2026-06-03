@@ -151,10 +151,28 @@ export async function POST(request: NextRequest) {
     `Observação: ${values.observacoes?.trim() || ""}`
   ].join("\n");
 
-  await sendWhatsAppMessage({
+  const whatsappResult = await sendWhatsAppMessage({
     to: professional.telefone,
-    message: whatsappMessage
-  }).catch(() => undefined);
+    message: [
+      "\uD83D\uDCC5 Novo Agendamento",
+      "",
+      `Cliente: ${clienteNome}`,
+      `\uD83D\uDCDE Telefone: ${clienteTelefone}`,
+      "",
+      `Servico: ${service.nome}`,
+      `Data: ${dateBR(values.data)}`,
+      `Horario: ${values.hora_inicio}`,
+      "",
+      `Observacao: ${values.observacoes?.trim() || ""}`
+    ].join("\n")
+  }).catch((error) => ({
+    sent: false,
+    reason: error instanceof Error ? error.message : "unknown_error"
+  }));
+
+  if (!whatsappResult.sent) {
+    console.warn("Falha ao enviar WhatsApp do agendamento", whatsappResult.reason);
+  }
 
   await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/appointment-confirmation`, {
     method: "POST",
