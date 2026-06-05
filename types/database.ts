@@ -180,6 +180,29 @@ export type Database = {
         };
         Update: Partial<Database["public"]["Tables"]["notificacoes_profissionais"]["Insert"]>;
       };
+      avaliacoes: {
+        Row: {
+          id: string;
+          agendamento_id: string;
+          estabelecimento_id: string;
+          cliente_nome: string | null;
+          cliente_telefone: string;
+          nota: number;
+          comentario: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          agendamento_id: string;
+          estabelecimento_id: string;
+          cliente_nome?: string | null;
+          cliente_telefone: string;
+          nota: number;
+          comentario?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["avaliacoes"]["Insert"]>;
+      };
     };
   };
 };
