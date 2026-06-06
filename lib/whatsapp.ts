@@ -5,7 +5,7 @@ type SendWhatsAppMessageParams = {
 
 type WhatsAppSendResult = {
   sent: boolean;
-  provider?: "evolution" | "meta";
+  provider?: "evolution";
   reason?: string;
 };
 
@@ -88,43 +88,6 @@ async function sendEvolutionMessage(
   return { sent: true, provider: "evolution" };
 }
 
-async function sendMetaMessage(to: string, message: string): Promise<WhatsAppSendResult> {
-  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
-  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN || process.env.WHATSAPP_API_TOKEN;
-
-  if (!phoneNumberId || !accessToken) {
-    return { sent: false, provider: "meta", reason: "missing_config" };
-  }
-
-  const normalizedPhone = normalizeBrazilianPhone(to);
-  if (normalizedPhone.length < 12) {
-    return { sent: false, provider: "meta", reason: "invalid_phone" };
-  }
-
-  const response = await fetch(`https://graph.facebook.com/v20.0/${phoneNumberId}/messages`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      messaging_product: "whatsapp",
-      to: normalizedPhone,
-      type: "text",
-      text: {
-        preview_url: false,
-        body: message
-      }
-    })
-  });
-
-  if (!response.ok) {
-    return { sent: false, provider: "meta", reason: await response.text() };
-  }
-
-  return { sent: true, provider: "meta" };
-}
-
 export async function sendWhatsAppMessage({
   to,
   message
@@ -133,13 +96,9 @@ export async function sendWhatsAppMessage({
     return { sent: false, reason: "missing_recipient" };
   }
 
-  if (process.env.WHATSAPP_PROVIDER === "evolution" || hasEvolutionConfig()) {
-    const evolutionResult = await sendEvolutionMessage(to, message);
-
-    if (evolutionResult.sent || process.env.WHATSAPP_PROVIDER === "evolution") {
-      return evolutionResult;
-    }
+  if (!hasEvolutionConfig()) {
+    return { sent: false, provider: "evolution", reason: "missing_config" };
   }
 
-  return sendMetaMessage(to, message);
+  return sendEvolutionMessage(to, message);
 }

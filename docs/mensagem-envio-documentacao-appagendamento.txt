@@ -1,0 +1,23 @@
+Olá! Tudo bem?
+
+Segue a documentação do appAgendamento, nosso sistema online para empresas que trabalham com horários marcados.
+
+Com ele, seus clientes conseguem agendar serviços pelo celular, escolhendo:
+
+- Serviço
+- Profissional
+- Data
+- Horário disponível
+
+A empresa conta com:
+
+- Painel administrativo para cadastrar serviços, profissionais, usuários e disponibilidades
+- Painel do profissional para acompanhar, confirmar e cancelar atendimentos
+- Painel do cliente com próximos agendamentos, histórico, cancelamento e avaliação
+- Notificações via WhatsApp para novos agendamentos, confirmações e cancelamentos
+- Controle para evitar conflito de horários
+- Relatórios e gráfico de serviços por dia, separado por profissional
+
+O sistema é responsivo, moderno e pode ser acessado pelo computador ou celular.
+
+Em anexo está o PDF com as principais funcionalidades.
