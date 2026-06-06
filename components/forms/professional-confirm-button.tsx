@@ -36,7 +36,16 @@ export function ProfessionalConfirmButton({
       return;
     }
 
-    toast.success("Agendamento confirmado.");
+    if (payload.whatsapp?.sent === false) {
+      toast.warning(
+        `Agendamento confirmado, mas o WhatsApp nao foi enviado${
+          payload.whatsapp.reason ? `: ${payload.whatsapp.reason}` : "."
+        }`
+      );
+    } else {
+      toast.success("Agendamento confirmado e WhatsApp enviado ao cliente.");
+    }
+
     router.refresh();
   }
 

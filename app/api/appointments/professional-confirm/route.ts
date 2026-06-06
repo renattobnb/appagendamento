@@ -52,7 +52,19 @@ export async function POST(request: NextRequest) {
     .eq("id", parsed.data.appointment_id)
     .maybeSingle();
 
-  if (appointment?.cliente_telefone) {
+  let whatsappResult: Awaited<ReturnType<typeof sendWhatsAppMessage>> | null = null;
+
+  if (!appointment) {
+    return NextResponse.json({
+      ok: true,
+      whatsapp: {
+        sent: false,
+        reason: "appointment_not_loaded"
+      }
+    });
+  }
+
+  if (appointment.cliente_telefone) {
     const professional = Array.isArray(appointment.profissionais)
       ? appointment.profissionais[0]
       : appointment.profissionais;
@@ -60,7 +72,7 @@ export async function POST(request: NextRequest) {
       ? appointment.servicos[0]
       : appointment.servicos;
 
-    const whatsappResult = await sendWhatsAppMessage({
+    whatsappResult = await sendWhatsAppMessage({
       to: appointment.cliente_telefone,
       message: [
         "\u2705 Agendamento confirmado",
@@ -81,7 +93,12 @@ export async function POST(request: NextRequest) {
     if (!whatsappResult.sent) {
       console.warn("Falha ao enviar WhatsApp de confirmacao", whatsappResult.reason);
     }
+  } else {
+    whatsappResult = {
+      sent: false,
+      reason: "missing_client_phone"
+    };
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, whatsapp: whatsappResult });
 }

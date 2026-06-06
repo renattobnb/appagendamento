@@ -41,10 +41,20 @@ export function ProfessionalCancelButton({
       return;
     }
 
-    toast.success("Agendamento cancelado.");
+    if (payload.whatsapp?.sent === false) {
+      toast.warning(
+        `Agendamento cancelado, mas o WhatsApp nao foi enviado${
+          payload.whatsapp.reason ? `: ${payload.whatsapp.reason}` : "."
+        }`
+      );
+    } else {
+      toast.success("Agendamento cancelado e WhatsApp enviado ao cliente.");
+    }
+
     setOpen(false);
     setMotivo("");
     router.refresh();
+    window.location.replace(window.location.pathname);
   }
 
   if (!open) {

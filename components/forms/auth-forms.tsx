@@ -12,7 +12,6 @@ import { createClient } from "@/lib/supabase/client";
 import { loginSchema, resetSchema, signupSchema, simpleLoginSchema } from "@/lib/validations/auth";
 
 export function LoginForm() {
-  const router = useRouter();
   const params = useParams();
   const tenantSlug = params?.tenantSlug as string | undefined;
   const form = useForm<z.infer<typeof simpleLoginSchema>>({
@@ -23,9 +22,10 @@ export function LoginForm() {
   function onSubmit(values: z.infer<typeof simpleLoginSchema>) {
     localStorage.setItem("agenda_cliente_nome", values.nome);
     localStorage.setItem("agenda_cliente_whatsapp", values.telefone);
-    document.cookie = `agenda_guest=${encodeURIComponent(values.telefone)}; path=/; max-age=2592000; SameSite=Lax`;
+    const secureCookie = window.location.protocol === "https:" ? "; Secure" : "";
+    document.cookie = `agenda_guest=${encodeURIComponent(values.telefone)}; path=/; max-age=2592000; SameSite=Lax${secureCookie}`;
     toast.success("Dados salvos. Vamos escolher seu horario.");
-    router.push(tenantSlug ? `/${tenantSlug}/agendar` : "/agendar");
+    window.location.assign(tenantSlug ? `/${tenantSlug}/agendar` : "/agendar");
   }
 
   return (
