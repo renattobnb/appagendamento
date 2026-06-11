@@ -130,17 +130,7 @@ export function AppointmentForm({
         return;
       }
 
-      if (payload.push?.sent === 0) {
-        toast.warning(
-          payload.push.reason === "no_subscriptions"
-            ? "Agendamento criado, mas o profissional ainda nao ativou as notificacoes neste dispositivo."
-            : `Agendamento criado, mas a notificacao push nao foi enviada${
-                payload.push.reason ? `: ${payload.push.reason}` : "."
-              }`
-        );
-      } else {
-        toast.success("Agendamento criado e notificacao enviada ao profissional.");
-      }
+      toast.success("Agendamento criado com sucesso.");
 
       form.reset({ ...values, hora_inicio: "" });
       router.push(tenantSlug ? `/${tenantSlug}/cliente` : "/cliente");
