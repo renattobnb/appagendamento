@@ -16,8 +16,8 @@ import { getEstablishmentBySlug } from "@/lib/establishments";
 
 export const dynamic = "force-dynamic";
 
-function isFutureAppointment(appointment: { data: string; hora_inicio: string }) {
-  return new Date(`${appointment.data}T${appointment.hora_inicio}`) > new Date();
+function canCancelAppointment(appointment: { data: string; hora_fim: string }) {
+  return new Date(`${appointment.data}T${appointment.hora_fim}`) > new Date();
 }
 
 type ClientAppointment = {
@@ -75,7 +75,7 @@ export default async function ClientDashboardPage({ params }: PageProps) {
   const upcoming = (appointments ?? []).filter(
     (appointment) =>
       ["confirmado", "pendente"].includes(appointment.status) &&
-      isFutureAppointment(appointment)
+      canCancelAppointment(appointment)
   );
 
   return (
@@ -110,7 +110,7 @@ export default async function ClientDashboardPage({ params }: PageProps) {
                     <div className="flex flex-col items-end gap-2">
                       <StatusBadge status={appointment.status} />
                       {["confirmado", "pendente"].includes(appointment.status) &&
-                        isFutureAppointment(appointment) && (
+                        canCancelAppointment(appointment) && (
                           <CancelAppointmentButton
                             appointmentId={appointment.id}
                             estabelecimentoId={establishment.id}

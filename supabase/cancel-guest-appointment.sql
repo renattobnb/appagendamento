@@ -16,7 +16,7 @@ begin
   where id = appointment_id_param
     and estabelecimento_id = estabelecimento_id_param
     and status in ('pendente', 'confirmado')
-    and (data + hora_inicio) > now()
+    and (data + hora_fim) > now()
     and regexp_replace(coalesce(cliente_telefone, ''), '\D', '', 'g')
       = regexp_replace(coalesce(telefone_param, ''), '\D', '', 'g');
 
