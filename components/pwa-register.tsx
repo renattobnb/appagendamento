@@ -1,1 +1,27 @@
-InVzZSBjbGllbnQiOwoKaW1wb3J0IHsgdXNlRWZmZWN0IH0gZnJvbSAicmVhY3QiOwoKZXhwb3J0IGZ1bmN0aW9uIFB3YVJlZ2lzdGVyKCkgewogIHVzZUVmZmVjdCgoKSA9PiB7CiAgICBpZiAoISgic2VydmljZVdvcmtlciIgaW4gbmF2aWdhdG9yKSkgcmV0dXJuOwogICAgY29uc3QgaXNMb2NhbGhvc3QgPSBbImxvY2FsaG9zdCIsICIxMjcuMC4wLjEiXS5pbmNsdWRlcyh3aW5kb3cubG9jYXRpb24uaG9zdG5hbWUpOwogICAgaWYgKHByb2Nlc3MuZW52Lk5PREVfRU5WICE9PSAicHJvZHVjdGlvbiIgJiYgIWlzTG9jYWxob3N0KSByZXR1cm47CgogICAgY29uc3QgcmVnaXN0ZXJTZXJ2aWNlV29ya2VyID0gKCkgPT4gewogICAgICBuYXZpZ2F0b3Iuc2VydmljZVdvcmtlci5yZWdpc3RlcigiL3N3LmpzIikuY2F0Y2goKCkgPT4gewogICAgICAgIC8vIE8gUFdBIGNvbnRpbnVhIGZ1bmNpb25hbmRvIG5vIG5hdmVnYWRvciBtZXNtbyBzZSBvIHJlZ2lzdHJvIGZhbGhhci4KICAgICAgfSk7CiAgICB9OwoKICAgIGlmIChkb2N1bWVudC5yZWFkeVN0YXRlID09PSAiY29tcGxldGUiKSB7CiAgICAgIHJlZ2lzdGVyU2VydmljZVdvcmtlcigpOwogICAgICByZXR1cm47CiAgICB9CgogICAgd2luZG93LmFkZEV2ZW50TGlzdGVuZXIoImxvYWQiLCByZWdpc3RlclNlcnZpY2VXb3JrZXIsIHsgb25jZTogdHJ1ZSB9KTsKICAgIHJldHVybiAoKSA9PiB3aW5kb3cucmVtb3ZlRXZlbnRMaXN0ZW5lcigibG9hZCIsIHJlZ2lzdGVyU2VydmljZVdvcmtlcik7CiAgfSwgW10pOwoKICByZXR1cm4gbnVsbDsKfQo=
+"use client";
+
+import { useEffect } from "react";
+
+export function PwaRegister() {
+  useEffect(() => {
+    if (!("serviceWorker" in navigator)) return;
+    const isLocalhost = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+    if (process.env.NODE_ENV !== "production" && !isLocalhost) return;
+
+    const registerServiceWorker = () => {
+      navigator.serviceWorker.register("/sw.js").catch(() => {
+        // O PWA continua funcionando no navegador mesmo se o registro falhar.
+      });
+    };
+
+    if (document.readyState === "complete") {
+      registerServiceWorker();
+      return;
+    }
+
+    window.addEventListener("load", registerServiceWorker, { once: true });
+    return () => window.removeEventListener("load", registerServiceWorker);
+  }, []);
+
+  return null;
+}

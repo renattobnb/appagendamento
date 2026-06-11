@@ -1,1 +1,64 @@
-Y3JlYXRlIG9yIHJlcGxhY2UgZnVuY3Rpb24gcHVibGljLnByZXZlbnRfYXBwb2ludG1lbnRfY29uZmxpY3QoKQpyZXR1cm5zIHRyaWdnZXIKbGFuZ3VhZ2UgcGxwZ3NxbApzZXQgc2VhcmNoX3BhdGggPSBwdWJsaWMKYXMgJCQKYmVnaW4KICBpZiBuZXcuc3RhdHVzIG5vdCBpbiAoJ2NvbmZpcm1hZG8nLCAncGVuZGVudGUnKSB0aGVuCiAgICByZXR1cm4gbmV3OwogIGVuZCBpZjsKCiAgcGVyZm9ybSBwZ19hZHZpc29yeV94YWN0X2xvY2soCiAgICBoYXNodGV4dGV4dGVuZGVkKAogICAgICBuZXcuZXN0YWJlbGVjaW1lbnRvX2lkOjp0ZXh0IHx8ICc6JyB8fCBuZXcucHJvZmlzc2lvbmFsX2lkOjp0ZXh0IHx8ICc6JyB8fCBuZXcuZGF0YTo6dGV4dCwKICAgICAgMAogICAgKQogICk7CgogIGlmIG5ldy5kYXRhIDwgY3VycmVudF9kYXRlIG9yIChuZXcuZGF0YSA9IGN1cnJlbnRfZGF0ZSBhbmQgbmV3LmhvcmFfaW5pY2lvIDwgY3VycmVudF90aW1lKSB0aGVuCiAgICByYWlzZSBleGNlcHRpb24gJ05hbyBlIHBlcm1pdGlkbyBhZ2VuZGFyIGVtIGhvcmFyaW9zIHBhc3NhZG9zJzsKICBlbmQgaWY7CgogIGlmIG5vdCBleGlzdHMgKAogICAgc2VsZWN0IDEKICAgIGZyb20gcHVibGljLnByb2Zpc3Npb25haXMgcAogICAgd2hlcmUgcC5pZCA9IG5ldy5wcm9maXNzaW9uYWxfaWQKICAgICAgYW5kIHAuZXN0YWJlbGVjaW1lbnRvX2lkID0gbmV3LmVzdGFiZWxlY2ltZW50b19pZAogICkgdGhlbgogICAgcmFpc2UgZXhjZXB0aW9uICdQcm9maXNzaW9uYWwgbmFvIHBlcnRlbmNlIGEgZXN0ZSBlc3RhYmVsZWNpbWVudG8nOwogIGVuZCBpZjsKCiAgaWYgZXhpc3RzICgKICAgIHNlbGVjdCAxCiAgICBmcm9tIHB1YmxpYy5hZ2VuZGFtZW50b3MgYQogICAgd2hlcmUgYS5wcm9maXNzaW9uYWxfaWQgPSBuZXcucHJvZmlzc2lvbmFsX2lkCiAgICAgIGFuZCBhLmRhdGEgPSBuZXcuZGF0YQogICAgICBhbmQgYS5lc3RhYmVsZWNpbWVudG9faWQgPSBuZXcuZXN0YWJlbGVjaW1lbnRvX2lkCiAgICAgIGFuZCBhLnN0YXR1cyBpbiAoJ2NvbmZpcm1hZG8nLCAncGVuZGVudGUnKQogICAgICBhbmQgYS5pZCA8PiBjb2FsZXNjZShuZXcuaWQsIGdlbl9yYW5kb21fdXVpZCgpKQogICAgICBhbmQgYS5ob3JhX2luaWNpbyA8IG5ldy5ob3JhX2ZpbQogICAgICBhbmQgYS5ob3JhX2ZpbSA+IG5ldy5ob3JhX2luaWNpbwogICkgdGhlbgogICAgcmFpc2UgZXhjZXB0aW9uICdDb25mbGl0byBkZSBob3JhcmlvIHBhcmEgZXN0ZSBwcm9maXNzaW9uYWwnOwogIGVuZCBpZjsKCiAgaWYgbm90IGV4aXN0cyAoCiAgICBzZWxlY3QgMQogICAgZnJvbSBwdWJsaWMuZGlzcG9uaWJpbGlkYWRlIGQKICAgIHdoZXJlIGQucHJvZmlzc2lvbmFsX2lkID0gbmV3LnByb2Zpc3Npb25hbF9pZAogICAgICBhbmQgZC5kaWFfc2VtYW5hID0gZXh0cmFjdChkb3cgZnJvbSBuZXcuZGF0YSkKICAgICAgYW5kIGQuZXN0YWJlbGVjaW1lbnRvX2lkID0gbmV3LmVzdGFiZWxlY2ltZW50b19pZAogICAgICBhbmQgbmV3LmhvcmFfaW5pY2lvID49IGQuaG9yYV9pbmljaW8KICAgICAgYW5kIG5ldy5ob3JhX2ZpbSA8PSBkLmhvcmFfZmltCiAgKSB0aGVuCiAgICByYWlzZSBleGNlcHRpb24gJ0hvcmFyaW8gZm9yYSBkYSBkaXNwb25pYmlsaWRhZGUgZG8gcHJvZmlzc2lvbmFsJzsKICBlbmQgaWY7CgogIHJldHVybiBuZXc7CmVuZDsKJCQ7Cgpkcm9wIHRyaWdnZXIgaWYgZXhpc3RzIGFnZW5kYW1lbnRvc19wcmV2ZW50X2NvbmZsaWN0IG9uIHB1YmxpYy5hZ2VuZGFtZW50b3M7CmNyZWF0ZSB0cmlnZ2VyIGFnZW5kYW1lbnRvc19wcmV2ZW50X2NvbmZsaWN0CmJlZm9yZSBpbnNlcnQgb3IgdXBkYXRlIG9uIHB1YmxpYy5hZ2VuZGFtZW50b3MKZm9yIGVhY2ggcm93IGV4ZWN1dGUgZnVuY3Rpb24gcHVibGljLnByZXZlbnRfYXBwb2ludG1lbnRfY29uZmxpY3QoKTsK
+create or replace function public.prevent_appointment_conflict()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  if new.status not in ('confirmado', 'pendente') then
+    return new;
+  end if;
+
+  perform pg_advisory_xact_lock(
+    hashtextextended(
+      new.estabelecimento_id::text || ':' || new.profissional_id::text || ':' || new.data::text,
+      0
+    )
+  );
+
+  if new.data < current_date or (new.data = current_date and new.hora_inicio < current_time) then
+    raise exception 'Nao e permitido agendar em horarios passados';
+  end if;
+
+  if not exists (
+    select 1
+    from public.profissionais p
+    where p.id = new.profissional_id
+      and p.estabelecimento_id = new.estabelecimento_id
+  ) then
+    raise exception 'Profissional nao pertence a este estabelecimento';
+  end if;
+
+  if exists (
+    select 1
+    from public.agendamentos a
+    where a.profissional_id = new.profissional_id
+      and a.data = new.data
+      and a.estabelecimento_id = new.estabelecimento_id
+      and a.status in ('confirmado', 'pendente')
+      and a.id <> coalesce(new.id, gen_random_uuid())
+      and a.hora_inicio < new.hora_fim
+      and a.hora_fim > new.hora_inicio
+  ) then
+    raise exception 'Conflito de horario para este profissional';
+  end if;
+
+  if not exists (
+    select 1
+    from public.disponibilidade d
+    where d.profissional_id = new.profissional_id
+      and d.dia_semana = extract(dow from new.data)
+      and d.estabelecimento_id = new.estabelecimento_id
+      and new.hora_inicio >= d.hora_inicio
+      and new.hora_fim <= d.hora_fim
+  ) then
+    raise exception 'Horario fora da disponibilidade do profissional';
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists agendamentos_prevent_conflict on public.agendamentos;
+create trigger agendamentos_prevent_conflict
+before insert or update on public.agendamentos
+for each row execute function public.prevent_appointment_conflict();

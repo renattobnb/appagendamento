@@ -1,1 +1,44 @@
-ewogICJuYW1lIjogImFwcC1hZ2VuZGFtZW50byIsCiAgInZlcnNpb24iOiAiMC4xLjAiLAogICJwcml2YXRlIjogdHJ1ZSwKICAic2NyaXB0cyI6IHsKICAgICJkZXYiOiAibmV4dCBkZXYiLAogICAgImJ1aWxkIjogIm5leHQgYnVpbGQiLAogICAgInN0YXJ0IjogIm5leHQgc3RhcnQiLAogICAgImxpbnQiOiAibmV4dCBsaW50IiwKICAgICJ0eXBlY2hlY2siOiAidHNjIC0tbm9FbWl0IgogIH0sCiAgImRlcGVuZGVuY2llcyI6IHsKICAgICJAaG9va2Zvcm0vcmVzb2x2ZXJzIjogIl4zLjEwLjAiLAogICAgIkBzdXBhYmFzZS9zc3IiOiAiXjAuNS4yIiwKICAgICJAc3VwYWJhc2Uvc3VwYWJhc2UtanMiOiAiXjIuNDguMSIsCiAgICAiQHRhbnN0YWNrL3JlYWN0LXF1ZXJ5IjogIl41LjY2LjAiLAogICAgIkB0eXBlcy93ZWItcHVzaCI6ICJeMy42LjQiLAogICAgImNsc3giOiAiXjIuMS4xIiwKICAgICJkYXRlLWZucyI6ICJeNC4xLjAiLAogICAgImx1Y2lkZS1yZWFjdCI6ICJeMC40NzUuMCIsCiAgICAibmV4dCI6ICJeMTUuMS42IiwKICAgICJuZXh0LXRoZW1lcyI6ICJeMC40LjQiLAogICAgInJlYWN0IjogIl4xOS4wLjAiLAogICAgInJlYWN0LWRvbSI6ICJeMTkuMC4wIiwKICAgICJyZWFjdC1ob29rLWZvcm0iOiAiXjcuNTQuMiIsCiAgICAic29ubmVyIjogIl4xLjcuNCIsCiAgICAidGFpbHdpbmQtbWVyZ2UiOiAiXjIuNi4wIiwKICAgICJ3ZWItcHVzaCI6ICJeMy42LjciLAogICAgInpvZCI6ICJeMy4yNC4xIgogIH0sCiAgImRldkRlcGVuZGVuY2llcyI6IHsKICAgICJAdHlwZXMvbm9kZSI6ICJeMjIuMTMuMSIsCiAgICAiQHR5cGVzL3BnIjogIl44LjIwLjAiLAogICAgIkB0eXBlcy9yZWFjdCI6ICJeMTkuMC44IiwKICAgICJAdHlwZXMvcmVhY3QtZG9tIjogIl4xOS4wLjMiLAogICAgImF1dG9wcmVmaXhlciI6ICJeMTAuNC4yMCIsCiAgICAiZXNsaW50IjogIl45LjIwLjAiLAogICAgImVzbGludC1jb25maWctbmV4dCI6ICJeMTUuMS42IiwKICAgICJwZyI6ICJeOC4yMS4wIiwKICAgICJwb3N0Y3NzIjogIl44LjUuMSIsCiAgICAidGFpbHdpbmRjc3MiOiAiXjMuNC4xNyIsCiAgICAidHlwZXNjcmlwdCI6ICJeNS43LjMiCiAgfQp9Cg==
+{
+  "name": "app-agendamento",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^3.10.0",
+    "@supabase/ssr": "^0.5.2",
+    "@supabase/supabase-js": "^2.48.1",
+    "@tanstack/react-query": "^5.66.0",
+    "@types/web-push": "^3.6.4",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "lucide-react": "^0.475.0",
+    "next": "^15.1.6",
+    "next-themes": "^0.4.4",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-hook-form": "^7.54.2",
+    "sonner": "^1.7.4",
+    "tailwind-merge": "^2.6.0",
+    "web-push": "^3.6.7",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.1",
+    "@types/pg": "^8.20.0",
+    "@types/react": "^19.0.8",
+    "@types/react-dom": "^19.0.3",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^9.20.0",
+    "eslint-config-next": "^15.1.6",
+    "pg": "^8.21.0",
+    "postcss": "^8.5.1",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.3"
+  }
+}

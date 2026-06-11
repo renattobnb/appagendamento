@@ -1,1 +1,132 @@
-aW1wb3J0IHsgTmV4dFJlcXVlc3QsIE5leHRSZXNwb25zZSB9IGZyb20gIm5leHQvc2VydmVyIjsKaW1wb3J0IHsgeiB9IGZyb20gInpvZCI7CmltcG9ydCB7IGhhc1N1cGFiYXNlRW52IH0gZnJvbSAiQC9saWIvY29uZmlnIjsKaW1wb3J0IHsgY3JlYXRlQ2xpZW50IH0gZnJvbSAiQC9saWIvc3VwYWJhc2Uvc2VydmVyIjsKaW1wb3J0IHsgc2VuZFB1c2hUb0NsaWVudCB9IGZyb20gIkAvbGliL3B1c2gtbm90aWZpY2F0aW9ucyI7CmltcG9ydCB7IGRhdGVCUiwgdGltZVJhbmdlIH0gZnJvbSAiQC9saWIvdXRpbHMiOwppbXBvcnQgeyBzZW5kV2hhdHNBcHBNZXNzYWdlIH0gZnJvbSAiQC9saWIvd2hhdHNhcHAiOwoKY29uc3QgcHJvZmVzc2lvbmFsQ2FuY2VsU2NoZW1hID0gei5vYmplY3QoewogIGFwcG9pbnRtZW50X2lkOiB6LnN0cmluZygpLnV1aWQoKSwKICBtb3Rpdm86IHouc3RyaW5nKCkubWluKDUsICJJbmZvcm1lIHVtYSBqdXN0aWZpY2F0aXZhIikKfSk7CgpleHBvcnQgYXN5bmMgZnVuY3Rpb24gUE9TVChyZXF1ZXN0OiBOZXh0UmVxdWVzdCkgewogIGlmICghaGFzU3VwYWJhc2VFbnYoKSkgewogICAgcmV0dXJuIE5leHRSZXNwb25zZS5qc29uKAogICAgICB7IGVycm9yOiAiQ29uZmlndXJlIG8gU3VwYWJhc2UgZW0gLmVudi5sb2NhbCBwYXJhIGNhbmNlbGFyIGFnZW5kYW1lbnRvcyByZWFpcy4iIH0sCiAgICAgIHsgc3RhdHVzOiA1MDMgfQogICAgKTsKICB9CgogIGNvbnN0IHBhcnNlZCA9IHByb2Zlc3Npb25hbENhbmNlbFNjaGVtYS5zYWZlUGFyc2UoYXdhaXQgcmVxdWVzdC5qc29uKCkpOwogIGlmICghcGFyc2VkLnN1Y2Nlc3MpIHsKICAgIHJldHVybiBOZXh0UmVzcG9uc2UuanNvbih7IGVycm9yOiAiSW5mb3JtZSB1bWEganVzdGlmaWNhdGl2YSB2YWxpZGEuIiB9LCB7IHN0YXR1czogNDIyIH0pOwogIH0KCiAgY29uc3Qgc3VwYWJhc2UgPSBhd2FpdCBjcmVhdGVDbGllbnQoKTsKICBjb25zdCB7CiAgICBkYXRhOiB7IHVzZXIgfQogIH0gPSBhd2FpdCBzdXBhYmFzZS5hdXRoLmdldFVzZXIoKTsKCiAgaWYgKCF1c2VyKSB7CiAgICByZXR1cm4gTmV4dFJlc3BvbnNlLmpzb24oeyBlcnJvcjogIk5hbyBhdXRlbnRpY2FkbyIgfSwgeyBzdGF0dXM6IDQwMSB9KTsKICB9CgogIGNvbnN0IHsgZGF0YSwgZXJyb3IgfSA9IGF3YWl0IHN1cGFiYXNlLnJwYygiY2FuY2VsX3Byb2Zlc3Npb25hbF9hcHBvaW50bWVudCIsIHsKICAgIGFwcG9pbnRtZW50X2lkX3BhcmFtOiBwYXJzZWQuZGF0YS5hcHBvaW50bWVudF9pZCwKICAgIG1vdGl2b19wYXJhbTogcGFyc2VkLmRhdGEubW90aXZvCiAgfSk7CgogIGlmIChlcnJvcikgewogICAgcmV0dXJuIE5leHRSZXNwb25zZS5qc29uKHsgZXJyb3I6IGVycm9yLm1lc3NhZ2UgfSwgeyBzdGF0dXM6IDUwMCB9KTsKICB9CgogIGlmICghZGF0YSkgewogICAgcmV0dXJuIE5leHRSZXNwb25zZS5qc29uKAogICAgICB7IGVycm9yOiAiQWdlbmRhbWVudG8gbmFvIGVuY29udHJhZG8sIGphIGNhbmNlbGFkbyBvdSBmb3JhIGRvIHByYXpvLiIgfSwKICAgICAgeyBzdGF0dXM6IDQwNCB9CiAgICApOwogIH0KCiAgY29uc3QgeyBkYXRhOiBhcHBvaW50bWVudCB9ID0gYXdhaXQgc3VwYWJhc2UKICAgIC5mcm9tKCJhZ2VuZGFtZW50b3MiKQogICAgLnNlbGVjdCgKICAgICAgImNsaWVudGVfbm9tZSxjbGllbnRlX3RlbGVmb25lLGRhdGEsaG9yYV9pbmljaW8saG9yYV9maW0sbW90aXZvX2NhbmNlbGFtZW50byxlc3RhYmVsZWNpbWVudG9faWQsZXN0YWJlbGVjaW1lbnRvcyhzbHVnKSxwcm9maXNzaW9uYWlzKG5vbWUpLHNlcnZpY29zKG5vbWUpIgogICAgKQogICAgLmVxKCJpZCIsIHBhcnNlZC5kYXRhLmFwcG9pbnRtZW50X2lkKQogICAgLm1heWJlU2luZ2xlKCk7CgogIGxldCB3aGF0c2FwcFJlc3VsdDogQXdhaXRlZDxSZXR1cm5UeXBlPHR5cGVvZiBzZW5kV2hhdHNBcHBNZXNzYWdlPj4gfCBudWxsID0gbnVsbDsKCiAgaWYgKCFhcHBvaW50bWVudCkgewogICAgcmV0dXJuIE5leHRSZXNwb25zZS5qc29uKHsKICAgICAgb2s6IHRydWUsCiAgICAgIHdoYXRzYXBwOiB7CiAgICAgICAgc2VudDogZmFsc2UsCiAgICAgICAgcmVhc29uOiAiYXBwb2ludG1lbnRfbm90X2xvYWRlZCIKICAgICAgfQogICAgfSk7CiAgfQoKICBpZiAoYXBwb2ludG1lbnQuY2xpZW50ZV90ZWxlZm9uZSkgewogICAgY29uc3QgcHJvZmVzc2lvbmFsID0gQXJyYXkuaXNBcnJheShhcHBvaW50bWVudC5wcm9maXNzaW9uYWlzKQogICAgICA/IGFwcG9pbnRtZW50LnByb2Zpc3Npb25haXNbMF0KICAgICAgOiBhcHBvaW50bWVudC5wcm9maXNzaW9uYWlzOwogICAgY29uc3Qgc2VydmljZSA9IEFycmF5LmlzQXJyYXkoYXBwb2ludG1lbnQuc2Vydmljb3MpCiAgICAgID8gYXBwb2ludG1lbnQuc2Vydmljb3NbMF0KICAgICAgOiBhcHBvaW50bWVudC5zZXJ2aWNvczsKCiAgICB3aGF0c2FwcFJlc3VsdCA9IGF3YWl0IHNlbmRXaGF0c0FwcE1lc3NhZ2UoewogICAgICB0bzogYXBwb2ludG1lbnQuY2xpZW50ZV90ZWxlZm9uZSwKICAgICAgbWVzc2FnZTogWwogICAgICAgICJcdTI2QTBcdUZFMEYgQWdlbmRhbWVudG8gY2FuY2VsYWRvIiwKICAgICAgICAiIiwKICAgICAgICBgT2xhLCAke2FwcG9pbnRtZW50LmNsaWVudGVfbm9tZSA/PyAiY2xpZW50ZSJ9LmAsCiAgICAgICAgIlNldSBhZ2VuZGFtZW50byBmb2kgY2FuY2VsYWRvIHBlbG8gcHJvZmlzc2lvbmFsLiIsCiAgICAgICAgIiIsCiAgICAgICAgYFByb2Zpc3Npb25hbDogJHtwcm9mZXNzaW9uYWw/Lm5vbWUgPz8gIlByb2Zpc3Npb25hbCJ9YCwKICAgICAgICBgU2VydmljbzogJHtzZXJ2aWNlPy5ub21lID8/ICJTZXJ2aWNvIn1gLAogICAgICAgIGBEYXRhOiAke2RhdGVCUihhcHBvaW50bWVudC5kYXRhKX1gLAogICAgICAgIGBIb3JhcmlvOiAke3RpbWVSYW5nZShhcHBvaW50bWVudC5ob3JhX2luaWNpbywgYXBwb2ludG1lbnQuaG9yYV9maW0pfWAsCiAgICAgICAgIiIsCiAgICAgICAgYE1vdGl2bzogJHthcHBvaW50bWVudC5tb3Rpdm9fY2FuY2VsYW1lbnRvID8/IHBhcnNlZC5kYXRhLm1vdGl2b31gCiAgICAgIF0uam9pbigiXG4iKQogICAgfSkuY2F0Y2goKGVycm9yKSA9PiAoewogICAgICBzZW50OiBmYWxzZSwKICAgICAgcmVhc29uOiBlcnJvciBpbnN0YW5jZW9mIEVycm9yID8gZXJyb3IubWVzc2FnZSA6ICJ1bmtub3duX2Vycm9yIgogICAgfSkpOwoKICAgIGlmICghd2hhdHNhcHBSZXN1bHQuc2VudCkgewogICAgICBjb25zb2xlLndhcm4oIkZhbGhhIGFvIGVudmlhciBXaGF0c0FwcCBkZSBjYW5jZWxhbWVudG8iLCB3aGF0c2FwcFJlc3VsdC5yZWFzb24pOwogICAgfQoKICAgIGNvbnN0IGVzdGFibGlzaG1lbnQgPSBBcnJheS5pc0FycmF5KGFwcG9pbnRtZW50LmVzdGFiZWxlY2ltZW50b3MpCiAgICAgID8gYXBwb2ludG1lbnQuZXN0YWJlbGVjaW1lbnRvc1swXQogICAgICA6IGFwcG9pbnRtZW50LmVzdGFiZWxlY2ltZW50b3M7CiAgICBjb25zdCBwdXNoUmVzdWx0ID0gYXdhaXQgc2VuZFB1c2hUb0NsaWVudCh7CiAgICAgIGVzdGFiZWxlY2ltZW50b0lkOiBhcHBvaW50bWVudC5lc3RhYmVsZWNpbWVudG9faWQsCiAgICAgIGNsaWVudGVUZWxlZm9uZTogYXBwb2ludG1lbnQuY2xpZW50ZV90ZWxlZm9uZSwKICAgICAgcGF5bG9hZDogewogICAgICAgIHRpdGxlOiAiQWdlbmRhbWVudG8gY2FuY2VsYWRvIiwKICAgICAgICBib2R5OiBgJHtzZXJ2aWNlPy5ub21lID8/ICJTZXUgYXRlbmRpbWVudG8ifSBkZSAke2RhdGVCUihhcHBvaW50bWVudC5kYXRhKX0gw6BzICR7YXBwb2ludG1lbnQuaG9yYV9pbmljaW99IGZvaSBjYW5jZWxhZG8uYCwKICAgICAgICB1cmw6IGAvJHtlc3RhYmxpc2htZW50Py5zbHVnID8/ICJwYWRyYW8ifS9jbGllbnRlYAogICAgICB9CiAgICB9KS5jYXRjaCgoZXJyb3IpID0+ICh7CiAgICAgIHNlbnQ6IDAsCiAgICAgIGZhaWxlZDogMSwKICAgICAgcmVhc29uOiBlcnJvciBpbnN0YW5jZW9mIEVycm9yID8gZXJyb3IubWVzc2FnZSA6ICJ1bmtub3duX2Vycm9yIgogICAgfSkpOwoKICAgIGlmICghcHVzaFJlc3VsdC5zZW50KSB7CiAgICAgIGNvbnNvbGUud2FybigiRmFsaGEgYW8gZW52aWFyIHB1c2ggZGUgY2FuY2VsYW1lbnRvIiwgcHVzaFJlc3VsdCk7CiAgICB9CiAgfSBlbHNlIHsKICAgIHdoYXRzYXBwUmVzdWx0ID0gewogICAgICBzZW50OiBmYWxzZSwKICAgICAgcmVhc29uOiAibWlzc2luZ19jbGllbnRfcGhvbmUiCiAgICB9OwogIH0KCiAgcmV0dXJuIE5leHRSZXNwb25zZS5qc29uKHsgb2s6IHRydWUsIHdoYXRzYXBwOiB3aGF0c2FwcFJlc3VsdCB9KTsKfQo=
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { hasSupabaseEnv } from "@/lib/config";
+import { createClient } from "@/lib/supabase/server";
+import { sendPushToClient } from "@/lib/push-notifications";
+import { dateBR, timeRange } from "@/lib/utils";
+import { sendWhatsAppMessage } from "@/lib/whatsapp";
+
+const professionalCancelSchema = z.object({
+  appointment_id: z.string().uuid(),
+  motivo: z.string().min(5, "Informe uma justificativa")
+});
+
+export async function POST(request: NextRequest) {
+  if (!hasSupabaseEnv()) {
+    return NextResponse.json(
+      { error: "Configure o Supabase em .env.local para cancelar agendamentos reais." },
+      { status: 503 }
+    );
+  }
+
+  const parsed = professionalCancelSchema.safeParse(await request.json());
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Informe uma justificativa valida." }, { status: 422 });
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "Nao autenticado" }, { status: 401 });
+  }
+
+  const { data, error } = await supabase.rpc("cancel_professional_appointment", {
+    appointment_id_param: parsed.data.appointment_id,
+    motivo_param: parsed.data.motivo
+  });
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  if (!data) {
+    return NextResponse.json(
+      { error: "Agendamento nao encontrado, ja cancelado ou fora do prazo." },
+      { status: 404 }
+    );
+  }
+
+  const { data: appointment } = await supabase
+    .from("agendamentos")
+    .select(
+      "cliente_nome,cliente_telefone,data,hora_inicio,hora_fim,motivo_cancelamento,estabelecimento_id,estabelecimentos(slug),profissionais(nome),servicos(nome)"
+    )
+    .eq("id", parsed.data.appointment_id)
+    .maybeSingle();
+
+  let whatsappResult: Awaited<ReturnType<typeof sendWhatsAppMessage>> | null = null;
+
+  if (!appointment) {
+    return NextResponse.json({
+      ok: true,
+      whatsapp: {
+        sent: false,
+        reason: "appointment_not_loaded"
+      }
+    });
+  }
+
+  if (appointment.cliente_telefone) {
+    const professional = Array.isArray(appointment.profissionais)
+      ? appointment.profissionais[0]
+      : appointment.profissionais;
+    const service = Array.isArray(appointment.servicos)
+      ? appointment.servicos[0]
+      : appointment.servicos;
+
+    whatsappResult = await sendWhatsAppMessage({
+      to: appointment.cliente_telefone,
+      message: [
+        "\u26A0\uFE0F Agendamento cancelado",
+        "",
+        `Ola, ${appointment.cliente_nome ?? "cliente"}.`,
+        "Seu agendamento foi cancelado pelo profissional.",
+        "",
+        `Profissional: ${professional?.nome ?? "Profissional"}`,
+        `Servico: ${service?.nome ?? "Servico"}`,
+        `Data: ${dateBR(appointment.data)}`,
+        `Horario: ${timeRange(appointment.hora_inicio, appointment.hora_fim)}`,
+        "",
+        `Motivo: ${appointment.motivo_cancelamento ?? parsed.data.motivo}`
+      ].join("\n")
+    }).catch((error) => ({
+      sent: false,
+      reason: error instanceof Error ? error.message : "unknown_error"
+    }));
+
+    if (!whatsappResult.sent) {
+      console.warn("Falha ao enviar WhatsApp de cancelamento", whatsappResult.reason);
+    }
+
+    const establishment = Array.isArray(appointment.estabelecimentos)
+      ? appointment.estabelecimentos[0]
+      : appointment.estabelecimentos;
+    const pushResult = await sendPushToClient({
+      estabelecimentoId: appointment.estabelecimento_id,
+      clienteTelefone: appointment.cliente_telefone,
+      payload: {
+        title: "Agendamento cancelado",
+        body: `${service?.nome ?? "Seu atendimento"} de ${dateBR(appointment.data)} às ${appointment.hora_inicio} foi cancelado.`,
+        url: `/${establishment?.slug ?? "padrao"}/cliente`
+      }
+    }).catch((error) => ({
+      sent: 0,
+      failed: 1,
+      reason: error instanceof Error ? error.message : "unknown_error"
+    }));
+
+    if (!pushResult.sent) {
+      console.warn("Falha ao enviar push de cancelamento", pushResult);
+    }
+  } else {
+    whatsappResult = {
+      sent: false,
+      reason: "missing_client_phone"
+    };
+  }
+
+  return NextResponse.json({ ok: true, whatsapp: whatsappResult });
+}

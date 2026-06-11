@@ -1,1 +1,98 @@
-Y29uc3QgQ0FDSEVfTkFNRSA9ICJhcHBhZ2VuZGFtZW50by1wd2EtdjMiOwpjb25zdCBBUFBfU0hFTEwgPSBbIi8iLCAiL21hbmlmZXN0Lmpzb24iLCAiL2ljb25zL2ljb24tMTkyLnBuZyIsICIvaWNvbnMvaWNvbi01MTIucG5nIl07CgpzZWxmLmFkZEV2ZW50TGlzdGVuZXIoImluc3RhbGwiLCAoZXZlbnQpID0+IHsKICBldmVudC53YWl0VW50aWwoCiAgICBjYWNoZXMKICAgICAgLm9wZW4oQ0FDSEVfTkFNRSkKICAgICAgLnRoZW4oKGNhY2hlKSA9PiBjYWNoZS5hZGRBbGwoQVBQX1NIRUxMKSkKICAgICAgLnRoZW4oKCkgPT4gc2VsZi5za2lwV2FpdGluZygpKQogICk7Cn0pOwoKc2VsZi5hZGRFdmVudExpc3RlbmVyKCJhY3RpdmF0ZSIsIChldmVudCkgPT4gewogIGV2ZW50LndhaXRVbnRpbCgKICAgIGNhY2hlcwogICAgICAua2V5cygpCiAgICAgIC50aGVuKChrZXlzKSA9PgogICAgICAgIFByb21pc2UuYWxsKGtleXMuZmlsdGVyKChrZXkpID0+IGtleSAhPT0gQ0FDSEVfTkFNRSkubWFwKChrZXkpID0+IGNhY2hlcy5kZWxldGUoa2V5KSkpCiAgICAgICkKICAgICAgLnRoZW4oKCkgPT4gc2VsZi5jbGllbnRzLmNsYWltKCkpCiAgKTsKfSk7CgpzZWxmLmFkZEV2ZW50TGlzdGVuZXIoImZldGNoIiwgKGV2ZW50KSA9PiB7CiAgY29uc3QgeyByZXF1ZXN0IH0gPSBldmVudDsKICBjb25zdCB1cmwgPSBuZXcgVVJMKHJlcXVlc3QudXJsKTsKCiAgaWYgKHJlcXVlc3QubWV0aG9kICE9PSAiR0VUIikgcmV0dXJuOwogIGlmICh1cmwub3JpZ2luICE9PSBzZWxmLmxvY2F0aW9uLm9yaWdpbikgcmV0dXJuOwogIGlmICh1cmwucGF0aG5hbWUuc3RhcnRzV2l0aCgiL2FwaS8iKSkgcmV0dXJuOwoKICBpZiAocmVxdWVzdC5tb2RlID09PSAibmF2aWdhdGUiKSB7CiAgICBldmVudC5yZXNwb25kV2l0aCgKICAgICAgZmV0Y2gocmVxdWVzdCkKICAgICAgICAudGhlbigocmVzcG9uc2UpID0+IHJlc3BvbnNlKQogICAgICAgIC5jYXRjaCgoKSA9PiBjYWNoZXMubWF0Y2goIi8iKSkKICAgICk7CiAgICByZXR1cm47CiAgfQoKICBjb25zdCBpc1N0YXRpY0Fzc2V0ID0KICAgIHVybC5wYXRobmFtZS5zdGFydHNXaXRoKCIvX25leHQvc3RhdGljLyIpIHx8CiAgICB1cmwucGF0aG5hbWUuc3RhcnRzV2l0aCgiL2ljb25zLyIpIHx8CiAgICB1cmwucGF0aG5hbWUgPT09ICIvbWFuaWZlc3QuanNvbiI7CgogIGlmICghaXNTdGF0aWNBc3NldCkgewogICAgZXZlbnQucmVzcG9uZFdpdGgoZmV0Y2gocmVxdWVzdCkpOwogICAgcmV0dXJuOwogIH0KCiAgZXZlbnQucmVzcG9uZFdpdGgoCiAgICBjYWNoZXMubWF0Y2gocmVxdWVzdCkudGhlbigoY2FjaGVkKSA9PiB7CiAgICAgIGlmIChjYWNoZWQpIHJldHVybiBjYWNoZWQ7CgogICAgICByZXR1cm4gZmV0Y2gocmVxdWVzdCkudGhlbigocmVzcG9uc2UpID0+IHsKICAgICAgICBpZiAoIXJlc3BvbnNlIHx8IHJlc3BvbnNlLnN0YXR1cyAhPT0gMjAwIHx8IHJlc3BvbnNlLnJlZGlyZWN0ZWQpIHJldHVybiByZXNwb25zZTsKCiAgICAgICAgY29uc3QgY29weSA9IHJlc3BvbnNlLmNsb25lKCk7CiAgICAgICAgY2FjaGVzLm9wZW4oQ0FDSEVfTkFNRSkudGhlbigoY2FjaGUpID0+IGNhY2hlLnB1dChyZXF1ZXN0LCBjb3B5KSk7CiAgICAgICAgcmV0dXJuIHJlc3BvbnNlOwogICAgICB9KTsKICAgIH0pCiAgKTsKfSk7CgpzZWxmLmFkZEV2ZW50TGlzdGVuZXIoInB1c2giLCAoZXZlbnQpID0+IHsKICBjb25zdCBwYXlsb2FkID0gZXZlbnQuZGF0YT8uanNvbigpID8/IHt9OwogIGNvbnN0IHRpdGxlID0gcGF5bG9hZC50aXRsZSB8fCAiYXBwQWdlbmRhbWVudG8iOwogIGNvbnN0IG9wdGlvbnMgPSB7CiAgICBib2R5OiBwYXlsb2FkLmJvZHkgfHwgIlZvY2UgdGVtIHVtYSBub3ZhIGF0dWFsaXphY2FvIGRlIGFnZW5kYW1lbnRvLiIsCiAgICBpY29uOiAiL2ljb25zL2ljb24tMTkyLnBuZyIsCiAgICBiYWRnZTogIi9pY29ucy9pY29uLTE5Mi5wbmciLAogICAgZGF0YTogewogICAgICB1cmw6IHBheWxvYWQudXJsIHx8ICIvIgogICAgfQogIH07CgogIGV2ZW50LndhaXRVbnRpbChzZWxmLnJlZ2lzdHJhdGlvbi5zaG93Tm90aWZpY2F0aW9uKHRpdGxlLCBvcHRpb25zKSk7Cn0pOwoKc2VsZi5hZGRFdmVudExpc3RlbmVyKCJub3RpZmljYXRpb25jbGljayIsIChldmVudCkgPT4gewogIGV2ZW50Lm5vdGlmaWNhdGlvbi5jbG9zZSgpOwogIGNvbnN0IHVybCA9IGV2ZW50Lm5vdGlmaWNhdGlvbi5kYXRhPy51cmwgfHwgIi8iOwoKICBldmVudC53YWl0VW50aWwoCiAgICBzZWxmLmNsaWVudHMubWF0Y2hBbGwoeyB0eXBlOiAid2luZG93IiwgaW5jbHVkZVVuY29udHJvbGxlZDogdHJ1ZSB9KS50aGVuKChjbGllbnRzKSA9PiB7CiAgICAgIGZvciAoY29uc3QgY2xpZW50IG9mIGNsaWVudHMpIHsKICAgICAgICBpZiAoImZvY3VzIiBpbiBjbGllbnQgJiYgY2xpZW50LnVybC5pbmNsdWRlcyh1cmwpKSB7CiAgICAgICAgICByZXR1cm4gY2xpZW50LmZvY3VzKCk7CiAgICAgICAgfQogICAgICB9CgogICAgICBpZiAoc2VsZi5jbGllbnRzLm9wZW5XaW5kb3cpIHsKICAgICAgICByZXR1cm4gc2VsZi5jbGllbnRzLm9wZW5XaW5kb3codXJsKTsKICAgICAgfQogICAgfSkKICApOwp9KTsK
+const CACHE_NAME = "appagendamento-pwa-v3";
+const APP_SHELL = ["/", "/manifest.json", "/icons/icon-192.png", "/icons/icon-512.png"];
+
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches
+      .open(CACHE_NAME)
+      .then((cache) => cache.addAll(APP_SHELL))
+      .then(() => self.skipWaiting())
+  );
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)))
+      )
+      .then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener("fetch", (event) => {
+  const { request } = event;
+  const url = new URL(request.url);
+
+  if (request.method !== "GET") return;
+  if (url.origin !== self.location.origin) return;
+  if (url.pathname.startsWith("/api/")) return;
+
+  if (request.mode === "navigate") {
+    event.respondWith(
+      fetch(request)
+        .then((response) => response)
+        .catch(() => caches.match("/"))
+    );
+    return;
+  }
+
+  const isStaticAsset =
+    url.pathname.startsWith("/_next/static/") ||
+    url.pathname.startsWith("/icons/") ||
+    url.pathname === "/manifest.json";
+
+  if (!isStaticAsset) {
+    event.respondWith(fetch(request));
+    return;
+  }
+
+  event.respondWith(
+    caches.match(request).then((cached) => {
+      if (cached) return cached;
+
+      return fetch(request).then((response) => {
+        if (!response || response.status !== 200 || response.redirected) return response;
+
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+        return response;
+      });
+    })
+  );
+});
+
+self.addEventListener("push", (event) => {
+  const payload = event.data?.json() ?? {};
+  const title = payload.title || "appAgendamento";
+  const options = {
+    body: payload.body || "Voce tem uma nova atualizacao de agendamento.",
+    icon: "/icons/icon-192.png",
+    badge: "/icons/icon-192.png",
+    data: {
+      url: payload.url || "/"
+    }
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = event.notification.data?.url || "/";
+
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+      for (const client of clients) {
+        if ("focus" in client && client.url.includes(url)) {
+          return client.focus();
+        }
+      }
+
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(url);
+      }
+    })
+  );
+});
