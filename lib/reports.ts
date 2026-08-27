@@ -1,0 +1,6 @@
+export type InactiveCustomer = { key: string; name: string; phone: string | null; lastAppointmentDate: string; lastService: string | null; lastProfessional: string | null; inactiveDays: number };
+const BRAZILIAN_LOCAL_NUMBER = /^(?:[1-9]\d)(?:9?\d{8})$/;
+export function normalizeWhatsAppNumber(phone: string | null | undefined) { if (!phone) return null; let digits = phone.replace(/\D/g, ""); if (digits.startsWith("00")) digits = digits.slice(2); if (digits.startsWith("55")) digits = digits.slice(2); return BRAZILIAN_LOCAL_NUMBER.test(digits) ? `55${digits}` : null; }
+export function firstName(name: string) { return name.trim().split(/\s+/)[0] || "cliente"; }
+export function buildReactivationMessage(customer: Pick<InactiveCustomer, "name" | "lastService" | "inactiveDays">, establishmentName: string) { const service = customer.lastService ? ` para um novo ${customer.lastService}` : " para cuidar do visual"; return `Olá, ${firstName(customer.name)}! Tudo bem? 😊\nJá faz ${customer.inactiveDays} dias desde sua última visita à ${establishmentName}. Estamos por aqui${service}. Quer agendar um horário?`; }
+export function buildWhatsAppUrl(phone: string | null | undefined, message: string) { const normalized = normalizeWhatsAppNumber(phone); return normalized ? `https://wa.me/${normalized}?text=${encodeURIComponent(message)}` : null; }

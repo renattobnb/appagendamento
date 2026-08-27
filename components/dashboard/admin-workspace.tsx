@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, ReactNode, useEffect, useRef, useState, useTransition } from "react";
-import { CalendarDays, ChevronRight, Download, LayoutDashboard, MoreHorizontal, Pencil, Plus, Trash2, Users, X } from "lucide-react";
+import { BarChart3, CalendarDays, ChevronRight, Download, LayoutDashboard, Pencil, Plus, Trash2, Users, X } from "lucide-react";
 import { toast } from "sonner";
 import { AdminMetrics } from "@/components/dashboard/admin-metrics";
 import { StatusBadge } from "@/components/status-badge";
@@ -44,11 +44,11 @@ function FormDialog({ open, onClose, title, children }: { open: boolean; onClose
 }
 
 function MobileBottomNav({ section, navigate }: { section: Section; navigate: (section: Section) => void }) {
-  const items = [["overview", "Início", LayoutDashboard], ["agenda", "Agenda", CalendarDays], ["management", "Gestão", Users], ["reports", "Mais", MoreHorizontal]] as const;
+  const items = [["overview", "Início", LayoutDashboard], ["agenda", "Agenda", CalendarDays], ["management", "Gestão", Users], ["reports", "Relatórios", BarChart3]] as const;
   return <nav aria-label="Navegação administrativa" className="fixed inset-x-0 bottom-0 z-20 border-t bg-background/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1.5 backdrop-blur md:hidden"><div className="mx-auto grid max-w-md grid-cols-4">{items.map(([id, label, Icon]) => { const active = section === id || (id === "management" && ["services", "professionals", "availability"].includes(section)); return <button key={id} type="button" aria-current={active ? "page" : undefined} onClick={() => navigate(id)} className={"flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-md text-[11px] font-medium transition " + (active ? "text-primary" : "text-muted-foreground hover:bg-muted")}><Icon size={19}/><span>{label}</span></button>; })}</div></nav>;
 }
 
-export function AdminWorkspace({ establishmentName, appointments, services, professionals, availability, relations, users, createService, updateService, deleteService, createProfessional, updateProfessional, deleteProfessional, createAvailability, updateAvailability, deleteAvailability, createRelation, deleteRelation }: { establishmentName: string; appointments: Appointment[]; services: Service[]; professionals: Professional[]; availability: Availability[]; relations: Relation[]; users: number; createService: Action; updateService: Action; deleteService: Action; createProfessional: Action; updateProfessional: Action; deleteProfessional: Action; createAvailability: Action; updateAvailability: Action; deleteAvailability: Action; createRelation: Action; deleteRelation: Action }) {
+export function AdminWorkspace({ establishmentName, reportsHref, appointments, services, professionals, availability, relations, users, createService, updateService, deleteService, createProfessional, updateProfessional, deleteProfessional, createAvailability, updateAvailability, deleteAvailability, createRelation, deleteRelation }: { establishmentName: string; reportsHref: string; appointments: Appointment[]; services: Service[]; professionals: Professional[]; availability: Availability[]; relations: Relation[]; users: number; createService: Action; updateService: Action; deleteService: Action; createProfessional: Action; updateProfessional: Action; deleteProfessional: Action; createAvailability: Action; updateAvailability: Action; deleteAvailability: Action; createRelation: Action; deleteRelation: Action }) {
   const actions = { createService, updateService, deleteService, createProfessional, updateProfessional, deleteProfessional, createAvailability, updateAvailability, deleteAvailability, createRelation, deleteRelation };
   const [section, setSection] = useState<Section>("overview");
   const [dialog, setDialog] = useState<"service" | "professional" | "availability" | null>(null);
@@ -59,7 +59,7 @@ export function AdminWorkspace({ establishmentName, appointments, services, prof
   const managementActions = [["services", "Serviço", Plus], ["professionals", "Profissional", Users], ["availability", "Horário", CalendarDays]] as const;
   const close = () => { setDialog(null); setEditing(null); };
   const openCreate = (kind: "service" | "professional" | "availability") => { setEditing(null); setDialog(kind); };
-  const navigate = (next: Section) => { setSection(next); document.getElementById("admin-content")?.scrollIntoView({ behavior: "smooth", block: "start" }); };
+  const navigate = (next: Section) => { if (next === "reports") { window.location.assign(reportsHref); return; } setSection(next); document.getElementById("admin-content")?.scrollIntoView({ behavior: "smooth", block: "start" }); };
   const serviceLinks = (id: string) => relations.filter((link) => link.profissional_id === id).map((link) => link.servicoNome);
 
   return <div className="mx-auto max-w-7xl px-4 py-4 pb-24 sm:px-6 sm:py-6 sm:pb-8 lg:py-8">
