@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CalendarDays, LayoutDashboard, LogOut, Moon, Sun } from "lucide-react";
+import { CalendarDays, LayoutDashboard, LogOut, Menu, Moon, Sun, X } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -15,6 +15,7 @@ export function Navbar() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isAdminMaster, setIsAdminMaster] = useState(false);
   const [isProfessional, setIsProfessional] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const params = useParams();
   const router = useRouter();
   const tenantSlug = params?.tenantSlug as string | undefined;
@@ -111,6 +112,11 @@ export function Navbar() {
           </nav>
         )}
         <div className="flex items-center gap-2">
+          {tenantSlug && (
+            <Button aria-label={mobileOpen ? "Fechar menu" : "Abrir menu"} variant="ghost" className="size-11 px-0 md:hidden" onClick={() => setMobileOpen((open) => !open)}>
+              {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+            </Button>
+          )}
           <Button
             aria-label="Alternar tema"
             variant="ghost"
@@ -143,13 +149,25 @@ export function Navbar() {
             </Link>
           )}
           {(isAdmin || isAdminMaster || isProfessional) && (
-            <Button variant="secondary" onClick={handleSignOut}>
+            <Button variant="secondary" className="hidden sm:inline-flex" onClick={handleSignOut}>
               <LogOut size={16} />
               Sair
             </Button>
           )}
         </div>
       </div>
+      {tenantSlug && mobileOpen && (
+        <nav className="border-t bg-background px-4 py-3 md:hidden" aria-label="Menu principal">
+          <div className="mx-auto grid max-w-7xl gap-1">
+            <Link onClick={() => setMobileOpen(false)} className="rounded-md px-3 py-3 text-sm font-medium hover:bg-muted" href={`/${tenantSlug}/agendar`}>Agendar</Link>
+            <Link onClick={() => setMobileOpen(false)} className="rounded-md px-3 py-3 text-sm font-medium hover:bg-muted" href={`/${tenantSlug}/cliente`}>Agendamentos</Link>
+            {isProfessional && <Link onClick={() => setMobileOpen(false)} className="rounded-md px-3 py-3 text-sm font-medium hover:bg-muted" href={`/${tenantSlug}/profissional`}>Profissional</Link>}
+            {isAdmin && <Link onClick={() => setMobileOpen(false)} className="rounded-md px-3 py-3 text-sm font-medium hover:bg-muted" href={`/${tenantSlug}/admin`}>Painel administrativo</Link>}
+            {isAdminMaster && <Link onClick={() => setMobileOpen(false)} className="rounded-md px-3 py-3 text-sm font-medium hover:bg-muted" href="/admin-master">Admin Master</Link>}
+            {(isAdmin || isAdminMaster || isProfessional) && <Button variant="secondary" className="mt-2 w-full" onClick={handleSignOut}><LogOut size={16}/> Sair</Button>}
+          </div>
+        </nav>
+      )}
     </header>
   );
 }
