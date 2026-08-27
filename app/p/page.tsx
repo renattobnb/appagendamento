@@ -31,12 +31,13 @@ export default async function ProfessionalMagicAgendaPage({ searchParams }: { se
 
   const today = fortalezaDate(), tomorrow = fortalezaDate(1);
   const selectedPeriod = period === "tomorrow" ? "tomorrow" : period === "upcoming" ? "upcoming" : "today";
-  let query = service.from("agendamentos").select("id,cliente_nome,cliente_telefone,data,hora_inicio,hora_fim,status,observacoes,servicos(nome)").eq("professional_id", access.professional_id).eq("estabelecimento_id", access.establishment_id).order("data").order("hora_inicio");
+  let query = service.from("agendamentos").select("id,cliente_nome,cliente_telefone,data,hora_inicio,hora_fim,status,observacoes,servicos(nome)").eq("profissional_id", access.professional_id).eq("estabelecimento_id", access.establishment_id).order("data").order("hora_inicio");
   query = selectedPeriod === "today" ? query.eq("data", today) : selectedPeriod === "tomorrow" ? query.eq("data", tomorrow) : query.gte("data", today).limit(50);
-  const [{ data }, { data: next }] = await Promise.all([
+  const [{ data, error: appointmentsError }, { data: next, error: nextAppointmentError }] = await Promise.all([
     query,
-    service.from("agendamentos").select("id,cliente_nome,cliente_telefone,data,hora_inicio,hora_fim,status,observacoes,servicos(nome)").eq("professional_id", access.professional_id).eq("estabelecimento_id", access.establishment_id).gte("data", today).in("status", ["pendente", "confirmado"]).order("data").order("hora_inicio").limit(1)
+    service.from("agendamentos").select("id,cliente_nome,cliente_telefone,data,hora_inicio,hora_fim,status,observacoes,servicos(nome)").eq("profissional_id", access.professional_id).eq("estabelecimento_id", access.establishment_id).gte("data", today).in("status", ["pendente", "confirmado"]).order("data").order("hora_inicio").limit(1)
   ]);
+  if (appointmentsError || nextAppointmentError) throw new Error("Não foi possível carregar os atendimentos do profissional.");
   await touchProfessionalAccess(token, access);
   const normalize = (item: any) => ({ ...item, status: item.status as AppointmentStatus, servicoNome: (Array.isArray(item.servicos) ? item.servicos[0] : item.servicos)?.nome ?? null });
   return <ProfessionalMagicAgenda professionalName={professional.nome} establishmentName={establishment.nome} appointments={(data ?? []).map(normalize)} nextAppointment={next?.[0] ? normalize(next[0]) : null} today={today} tomorrow={tomorrow}/>;
