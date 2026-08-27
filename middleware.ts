@@ -26,6 +26,16 @@ export async function middleware(request: NextRequest) {
   const segments = pathname.split("/").filter(Boolean);
   const firstSegment = segments[0];
 
+  // O token de acesso só é recebido na rota /p/:token. Estas respostas nunca
+  // devem entrar em cache compartilhado nem repassar a URL de origem.
+  if (firstSegment === "p") {
+    const accessResponse = NextResponse.next({ request });
+    accessResponse.headers.set("Cache-Control", "private, no-store, max-age=0");
+    accessResponse.headers.set("Referrer-Policy", "no-referrer");
+    accessResponse.headers.set("X-Robots-Tag", "noindex, nofollow");
+    return accessResponse;
+  }
+
   if (firstSegment === "admin-master") {
     const isMasterLogin = segments[1] === "login";
     if (!hasSupabaseEnv()) return NextResponse.next();

@@ -1,8 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
+import { randomBytes } from "crypto";
 import { requireTenantAdministrator } from "@/lib/tenant-access";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { hashProfessionalAccessToken } from "@/lib/professional-access";
 
 type Intent = "createService" | "updateService" | "deleteService" | "createProfessional" | "updateProfessional" | "deleteProfessional" | "createAvailability" | "updateAvailability" | "deleteAvailability" | "createRelation" | "deleteRelation";
 type Result = { ok: boolean; message?: string };
@@ -72,3 +75,55 @@ export async function updateAvailabilityAction(data: FormData) { return executeF
 export async function deleteAvailabilityAction(data: FormData) { return executeForAuthenticatedTenant("deleteAvailability", data); }
 export async function createRelationAction(data: FormData) { return executeForAuthenticatedTenant("createRelation", data); }
 export async function deleteRelationAction(data: FormData) { return executeForAuthenticatedTenant("deleteRelation", data); }
+
+type AccessResult = Result & { link?: string };
+
+async function getAuthenticatedTenant() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Autenticação necessária.");
+  const { data: profile } = await supabase.from("users").select("tipo_usuario, estabelecimento_id").eq("id", user.id).maybeSingle();
+  if (profile?.tipo_usuario !== "administrador" || !profile.estabelecimento_id) throw new Error("Sem permissão administrativa.");
+  const { data: establishment } = await supabase.from("estabelecimentos").select("slug").eq("id", profile.estabelecimento_id).maybeSingle();
+  if (!establishment) throw new Error("Estabelecimento não encontrado.");
+  return { supabase, tenantSlug: establishment.slug };
+}
+
+export async function generateProfessionalAccessAction(data: FormData): Promise<AccessResult> {
+  const professionalId = String(data.get("professional_id") ?? "");
+  if (!professionalId) return fail("Profissional inválido.");
+  const { supabase, tenantSlug } = await getAuthenticatedTenant();
+  const token = randomBytes(48).toString("base64url");
+  const tokenHash = hashProfessionalAccessToken(token);
+  const { error } = await supabase.rpc("rotate_professional_access_token", { p_professional_id: professionalId, p_token_hash: tokenHash });
+  if (error) return fail("Não foi possível gerar o link de acesso.");
+  const service = createServiceClient();
+  const { data: persisted } = await service
+    .from("professional_access_tokens")
+    .select("id")
+    .eq("professional_id", professionalId)
+    .eq("token_hash", tokenHash)
+    .is("revoked_at", null)
+    .maybeSingle();
+  if (!persisted) {
+    await supabase.rpc("revoke_professional_access_token", { p_professional_id: professionalId });
+    return fail("A confirmação do link falhou. Nenhum acesso foi mantido; tente gerar novamente.");
+  }
+  const requestHeaders = await headers();
+  const protocol = requestHeaders.get("x-forwarded-proto") ?? "http";
+  const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
+  const origin = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? (host ? `${protocol}://${host}` : "");
+  if (!origin) return fail("Não foi possível montar o link de acesso.");
+  revalidatePath(`/${tenantSlug}/admin`);
+  return { ok: true, message: "Link de acesso criado. Copie ou compartilhe agora; ele não será exibido novamente.", link: `${origin}/p/${token}` };
+}
+
+export async function revokeProfessionalAccessAction(data: FormData): Promise<Result> {
+  const professionalId = String(data.get("professional_id") ?? "");
+  if (!professionalId) return fail("Profissional inválido.");
+  const { supabase, tenantSlug } = await getAuthenticatedTenant();
+  const { error } = await supabase.rpc("revoke_professional_access_token", { p_professional_id: professionalId });
+  if (error) return fail("Não foi possível revogar o link de acesso.");
+  revalidatePath(`/${tenantSlug}/admin`);
+  return ok("Acesso revogado. O link anterior não funciona mais.");
+}

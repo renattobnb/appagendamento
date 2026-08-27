@@ -84,6 +84,27 @@ export type Database = {
         };
         Update: Partial<Database["public"]["Tables"]["profissionais"]["Insert"]>;
       };
+      professional_access_tokens: {
+        Row: {
+          id: string;
+          professional_id: string;
+          establishment_id: string;
+          token_hash: string;
+          created_at: string;
+          last_used_at: string | null;
+          revoked_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          professional_id: string;
+          establishment_id: string;
+          token_hash: string;
+          created_at?: string;
+          last_used_at?: string | null;
+          revoked_at?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["professional_access_tokens"]["Insert"]>;
+      };
       profissional_servicos: {
         Row: {
           profissional_id: string;
