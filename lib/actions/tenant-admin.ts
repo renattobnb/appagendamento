@@ -16,14 +16,28 @@ export async function executeTenantAdminAction(tenantSlug: string, intent: Inten
   const name = String(formData.get("nome") ?? "").trim();
   const active = String(formData.get("ativo")) === "true";
   const service = { nome: name, descricao: String(formData.get("descricao") ?? "").trim() || null, valor: Number(formData.get("valor") ?? 0), duracao_minutos: Number(formData.get("duracao_minutos") ?? 30) };
-  const professional = { nome: name, especialidade: String(formData.get("especialidade") ?? "").trim() || null, telefone: String(formData.get("telefone") ?? "").trim() || null, foto_url: String(formData.get("foto_url") ?? "").trim() || null };
+  const professional = { nome: name, especialidade: String(formData.get("especialidade") ?? "").trim() || null, telefone: String(formData.get("telefone") ?? "").trim() || null };
   const availability = { profissional_id: String(formData.get("profissional_id") ?? ""), dia_semana: Number(formData.get("dia_semana")), hora_inicio: String(formData.get("hora_inicio") ?? ""), hora_fim: String(formData.get("hora_fim") ?? "") };
   const relation = { profissional_id: String(formData.get("profissional_id") ?? ""), servico_id: String(formData.get("servico_id") ?? "") };
   let error: { message: string } | null = null;
   if (intent === "createService") { if (!name) return fail("Informe o nome do serviço."); ({ error } = await supabase.from("servicos").insert({ ...service, ativo: true, estabelecimento_id: tenantId })); }
   if (intent === "updateService") { if (!id || !name) return fail("Serviço inválido."); ({ error } = await supabase.from("servicos").update({ ...service, ativo: active }).eq("id", id).eq("estabelecimento_id", tenantId)); }
   if (intent === "deleteService") { ({ error } = await supabase.from("servicos").update({ ativo: false }).eq("id", id).eq("estabelecimento_id", tenantId)); }
-  if (intent === "createProfessional") { if (!name) return fail("Informe o nome do profissional."); ({ error } = await supabase.from("profissionais").insert({ ...professional, ativo: true, estabelecimento_id: tenantId })); }
+  if (intent === "createProfessional") {
+    if (!name) return fail("Informe o nome do profissional.");
+    const serviceIds = formData.getAll("servico_ids").map(String).filter(Boolean);
+    if (!serviceIds.length) return fail("Selecione ao menos um serviço atendido.");
+    const { data: validServices, error: servicesError } = await supabase.from("servicos").select("id").eq("estabelecimento_id", tenantId).eq("ativo", true).in("id", serviceIds);
+    if (servicesError) return fail(servicesError.message);
+    if ((validServices ?? []).length !== new Set(serviceIds).size) return fail("Serviço inválido para este estabelecimento.");
+    const { data: createdProfessional, error: createError } = await supabase.from("profissionais").insert({ ...professional, ativo: true, estabelecimento_id: tenantId }).select("id").single();
+    if (createError || !createdProfessional) return fail(createError?.message ?? "Não foi possível criar o profissional.");
+    const { error: relationsError } = await supabase.from("profissional_servicos").insert(serviceIds.map((servico_id) => ({ profissional_id: createdProfessional.id, servico_id, estabelecimento_id: tenantId })));
+    if (relationsError) {
+      await supabase.from("profissionais").delete().eq("id", createdProfessional.id).eq("estabelecimento_id", tenantId);
+      return fail(relationsError.message);
+    }
+  }
   if (intent === "updateProfessional") { if (!id || !name) return fail("Profissional inválido."); ({ error } = await supabase.from("profissionais").update({ ...professional, ativo: active }).eq("id", id).eq("estabelecimento_id", tenantId)); }
   if (intent === "deleteProfessional") { ({ error } = await supabase.from("profissionais").update({ ativo: false }).eq("id", id).eq("estabelecimento_id", tenantId)); }
   if (intent === "createAvailability") { ({ error } = await supabase.from("disponibilidade").insert({ ...availability, estabelecimento_id: tenantId })); }
