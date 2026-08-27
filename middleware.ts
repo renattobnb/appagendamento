@@ -16,24 +16,23 @@ type CookieToSet = {
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
-
-  if (pathname !== pathname.toLowerCase()) {
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = pathname.toLowerCase();
-    return NextResponse.redirect(redirectUrl);
-  }
-
   const segments = pathname.split("/").filter(Boolean);
   const firstSegment = segments[0];
 
-  // O token de acesso só é recebido na rota /p/:token. Estas respostas nunca
-  // devem entrar em cache compartilhado nem repassar a URL de origem.
+  // A credencial é Base64URL e diferencia maiúsculas de minúsculas. Esta rota
+  // precisa ser tratada antes da normalização global de URLs.
   if (firstSegment === "p") {
     const accessResponse = NextResponse.next({ request });
     accessResponse.headers.set("Cache-Control", "private, no-store, max-age=0");
     accessResponse.headers.set("Referrer-Policy", "no-referrer");
     accessResponse.headers.set("X-Robots-Tag", "noindex, nofollow");
     return accessResponse;
+  }
+
+  if (pathname !== pathname.toLowerCase()) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = pathname.toLowerCase();
+    return NextResponse.redirect(redirectUrl);
   }
 
   if (firstSegment === "admin-master") {

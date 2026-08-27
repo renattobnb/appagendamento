@@ -1,4 +1,4 @@
-create table public.professional_access_tokens (
+create table if not exists public.professional_access_tokens (
   id uuid primary key default gen_random_uuid(),
   professional_id uuid not null references public.profissionais(id) on delete cascade,
   establishment_id uuid not null references public.estabelecimentos(id) on delete cascade,
@@ -10,10 +10,14 @@ create table public.professional_access_tokens (
 
 alter table public.professional_access_tokens enable row level security;
 
-create unique index professional_access_tokens_one_active_idx
+alter table public.professional_access_tokens
+  add column if not exists last_used_at timestamptz,
+  add column if not exists revoked_at timestamptz;
+
+create unique index if not exists professional_access_tokens_one_active_idx
   on public.professional_access_tokens(professional_id)
   where revoked_at is null;
-create index professional_access_tokens_lookup_idx
+create index if not exists professional_access_tokens_lookup_idx
   on public.professional_access_tokens(token_hash)
   where revoked_at is null;
 
@@ -36,6 +40,7 @@ end;
 $$;
 revoke all on function public.assert_professional_access_token_tenant() from public;
 
+drop trigger if exists professional_access_tokens_tenant_consistent on public.professional_access_tokens;
 create trigger professional_access_tokens_tenant_consistent
 before insert or update on public.professional_access_tokens
 for each row execute function public.assert_professional_access_token_tenant();
