@@ -1,215 +1,85 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Calendar, Clock, Loader2, UserRound } from "lucide-react";
+import { CalendarDays, Check, ChevronRight, Loader2, UserRound, X } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
+import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
+import { calculateEndTime } from "@/lib/appointments";
 import { appointmentSchema } from "@/lib/validations/appointment";
+import { cn, currency, formatAppointmentDateTime } from "@/lib/utils";
 import type { Database } from "@/types/database";
 
 type Service = Database["public"]["Tables"]["servicos"]["Row"];
-type Professional = Database["public"]["Tables"]["profissionais"]["Row"] & {
-  profissional_servicos?: { servico_id: string }[] | null;
-};
+type Professional = Database["public"]["Tables"]["profissionais"]["Row"] & { profissional_servicos?: { servico_id: string }[] | null };
+type SlotsResponse = { slots?: string[]; nextAvailable?: { date: string; slot: string } | null; error?: string };
+const slotsCache = new Map<string, SlotsResponse>();
 
-export function AppointmentForm({
-  services,
-  professionals,
-  estabelecimentoId
-}: {
-  services: Service[];
-  professionals: Professional[];
-  estabelecimentoId: string;
-}) {
-  const router = useRouter();
-  const params = useParams();
-  const tenantSlug = params?.tenantSlug as string | undefined;
-  const [slots, setSlots] = useState<string[]>([]);
-  const [loadingSlots, setLoadingSlots] = useState(false);
-  const [creatingAppointment, setCreatingAppointment] = useState(false);
-  const form = useForm<z.infer<typeof appointmentSchema>>({
-    resolver: zodResolver(appointmentSchema),
-    defaultValues: {
-      servico_id: services[0]?.id ?? "",
-      profissional_id: professionals[0]?.id ?? "",
-      data: new Date().toISOString().slice(0, 10),
-      hora_inicio: "",
-      estabelecimento_id: estabelecimentoId,
-      observacoes: ""
-    }
-  });
-  const [clientData, setClientData] = useState({ nome: "", telefone: "" });
+function fortalezaToday() {
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Fortaleza", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
+  const part = (type: Intl.DateTimeFormatPartTypes) => parts.find((item) => item.type === type)?.value ?? "01";
+  return `${part("year")}-${part("month")}-${part("day")}`;
+}
+function addDays(date: string, amount: number) { const [year, month, day] = date.split("-").map(Number); const value = new Date(Date.UTC(year, month - 1, day)); value.setUTCDate(value.getUTCDate() + amount); return value.toISOString().slice(0, 10); }
+function shortDate(date: string, today: string) { const [year, month, day] = date.split("-").map(Number); const value = new Date(year, month - 1, day, 12); return date === today ? { weekday: "Hoje", day: String(day) } : { weekday: new Intl.DateTimeFormat("pt-BR", { weekday: "short" }).format(value).replace(".", ""), day: String(day) }; }
 
+function ChoiceDialog({ open, title, onClose, children }: { open: boolean; title: string; onClose: () => void; children: React.ReactNode }) {
+  if (!open) return null;
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-end bg-foreground/35 sm:items-center sm:justify-center sm:p-6" role="presentation">
+      <button aria-label="Fechar" className="absolute inset-0 cursor-default" onClick={onClose} type="button" />
+      <section aria-modal="true" aria-labelledby="choice-dialog-title" className="relative z-10 max-h-[82vh] w-full overflow-y-auto rounded-t-2xl bg-background p-5 shadow-soft sm:max-w-lg sm:rounded-2xl">
+        <div className="mb-4 flex items-center justify-between"><h2 id="choice-dialog-title" className="text-lg font-bold">{title}</h2><Button type="button" variant="ghost" className="h-11 w-11 px-0" onClick={onClose} aria-label="Fechar"><X size={20} /></Button></div>
+        <div className="grid gap-2">{children}</div>
+      </section>
+    </div>,
+    document.body
+  );
+}
+
+export function AppointmentForm({ services, professionals, estabelecimentoId }: { services: Service[]; professionals: Professional[]; estabelecimentoId: string }) {
+  const router = useRouter(); const params = useParams(); const tenantSlug = params?.tenantSlug as string | undefined;
+  const today = useMemo(fortalezaToday, []); const abortRef = useRef<AbortController | null>(null);
+  const [slots, setSlots] = useState<string[]>([]); const [nextAvailable, setNextAvailable] = useState<{ date: string; slot: string } | null>(null); const [loadingSlots, setLoadingSlots] = useState(false); const [slotsError, setSlotsError] = useState<string | null>(null); const [creatingAppointment, setCreatingAppointment] = useState(false); const [choice, setChoice] = useState<"service" | "professional" | null>(null); const [showCalendar, setShowCalendar] = useState(false); const [showNotes, setShowNotes] = useState(false); const [clientData, setClientData] = useState({ nome: "", telefone: "" });
+  const form = useForm<z.infer<typeof appointmentSchema>>({ resolver: zodResolver(appointmentSchema), defaultValues: { servico_id: services.length === 1 ? services[0]?.id ?? "" : "", profissional_id: "", data: today, hora_inicio: "", estabelecimento_id: estabelecimentoId, observacoes: "" } });
   const watch = form.watch();
-  const selectedService = useMemo(
-    () => services.find((service) => service.id === watch.servico_id),
-    [services, watch.servico_id]
-  );
-  const availableProfessionals = useMemo(
-    () =>
-      professionals.filter((professional) =>
-        (professional.profissional_servicos ?? []).some(
-          (serviceLink) => serviceLink.servico_id === watch.servico_id
-        )
-      ),
-    [professionals, watch.servico_id]
-  );
+  const selectedService = useMemo(() => services.find((service) => service.id === watch.servico_id), [services, watch.servico_id]);
+  const availableProfessionals = useMemo(() => professionals.filter((professional) => (professional.profissional_servicos ?? []).some((link) => link.servico_id === watch.servico_id)), [professionals, watch.servico_id]);
+  const selectedProfessional = useMemo(() => availableProfessionals.find((professional) => professional.id === watch.profissional_id), [availableProfessionals, watch.profissional_id]);
+  const dates = useMemo(() => Array.from({ length: 7 }, (_, index) => addDays(today, index)), [today]);
+  const selectedEnd = selectedService && watch.hora_inicio ? calculateEndTime(watch.data, watch.hora_inicio, selectedService.duracao_minutos) : "";
+  const isReady = Boolean(watch.servico_id && watch.profissional_id && watch.data && watch.hora_inicio);
 
-  useEffect(() => {
-    if (!watch.servico_id) return;
-    const currentProfessionalIsAvailable = availableProfessionals.some(
-      (professional) => professional.id === watch.profissional_id
-    );
-
-    if (!currentProfessionalIsAvailable) {
-      form.setValue("profissional_id", availableProfessionals[0]?.id ?? "");
-      form.setValue("hora_inicio", "");
-      setSlots([]);
-    }
-  }, [availableProfessionals, form, watch.profissional_id, watch.servico_id]);
-
-  useEffect(() => {
-    setClientData({
-      nome: localStorage.getItem("agenda_cliente_nome") ?? "",
-      telefone: localStorage.getItem("agenda_cliente_whatsapp") ?? ""
-    });
-  }, []);
-
-  useEffect(() => {
-    async function loadSlots() {
-      if (!watch.servico_id || !watch.profissional_id || !watch.data) return;
-      setLoadingSlots(true);
-      const params = new URLSearchParams({
-        servico_id: watch.servico_id,
-        profissional_id: watch.profissional_id,
-        data: watch.data,
-        estabelecimento_id: estabelecimentoId
-      });
-      const response = await fetch(`/api/appointments/available-slots?${params}`);
-      const payload = await response.json();
-      setSlots(payload.slots ?? []);
-      form.setValue("hora_inicio", payload.slots?.[0] ?? "");
-      setLoadingSlots(false);
-    }
-    loadSlots();
-  }, [watch.servico_id, watch.profissional_id, watch.data, form, estabelecimentoId]);
+  useEffect(() => { if (!watch.servico_id) return; if (availableProfessionals.some((professional) => professional.id === watch.profissional_id)) return; form.setValue("profissional_id", availableProfessionals.length === 1 ? availableProfessionals[0].id : ""); form.setValue("hora_inicio", ""); setSlots([]); }, [availableProfessionals, form, watch.profissional_id, watch.servico_id]);
+  useEffect(() => { setClientData({ nome: localStorage.getItem("agenda_cliente_nome") ?? "", telefone: localStorage.getItem("agenda_cliente_whatsapp") ?? "" }); }, []);
+  const reloadSlots = useCallback(async () => {
+    if (!watch.servico_id || !watch.profissional_id || !watch.data) return;
+    const cacheKey = `${watch.servico_id}:${watch.profissional_id}:${watch.data}`; const cached = slotsCache.get(cacheKey);
+    if (cached) { setSlots(cached.slots ?? []); setNextAvailable(cached.nextAvailable ?? null); setSlotsError(null); return; }
+    abortRef.current?.abort(); const controller = new AbortController(); abortRef.current = controller; setLoadingSlots(true); setSlotsError(null);
+    try { const query = new URLSearchParams({ servico_id: watch.servico_id, profissional_id: watch.profissional_id, data: watch.data, estabelecimento_id: estabelecimentoId, lookahead_days: "21" }); const response = await fetch(`/api/appointments/available-slots?${query}`, { signal: controller.signal }); const payload = await response.json() as SlotsResponse; if (!response.ok) throw new Error(payload.error ?? "Não foi possível carregar os horários."); slotsCache.set(cacheKey, payload); setSlots(payload.slots ?? []); setNextAvailable(payload.nextAvailable ?? null); if (!(payload.slots ?? []).includes(watch.hora_inicio)) form.setValue("hora_inicio", ""); } catch (error) { if ((error as Error).name !== "AbortError") { setSlots([]); setNextAvailable(null); setSlotsError(error instanceof Error ? error.message : "Não foi possível carregar os horários."); } } finally { if (abortRef.current === controller) setLoadingSlots(false); }
+  }, [estabelecimentoId, form, watch.data, watch.hora_inicio, watch.profissional_id, watch.servico_id]);
+  useEffect(() => { void reloadSlots(); return () => abortRef.current?.abort(); }, [reloadSlots]);
+  const selectDate = (date: string) => { form.setValue("data", date); form.setValue("hora_inicio", ""); };
 
   async function onSubmit(values: z.infer<typeof appointmentSchema>) {
-    if (creatingAppointment) return;
-
-    const clienteNome = localStorage.getItem("agenda_cliente_nome") ?? undefined;
-    const clienteTelefone = localStorage.getItem("agenda_cliente_whatsapp") ?? undefined;
-
-    if (!clienteNome || !clienteTelefone) {
-      toast.error("Informe seu nome e WhatsApp na tela de entrada antes de agendar.");
-      return;
-    }
-
-    setCreatingAppointment(true);
-    try {
-      const response = await fetch("/api/appointments", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...values,
-          cliente_nome: clienteNome,
-          cliente_telefone: clienteTelefone,
-          estabelecimento_id: estabelecimentoId
-        })
-      });
-
-      const payload = await response.json();
-      if (!response.ok) {
-        toast.error(payload.error ?? "Nao foi possivel agendar.");
-        return;
-      }
-
-      toast.success("Agendamento criado com sucesso.");
-
-      form.reset({ ...values, hora_inicio: "" });
-      router.push(tenantSlug ? `/${tenantSlug}/cliente` : "/cliente");
-    } finally {
-      setCreatingAppointment(false);
-    }
+    if (creatingAppointment) return; const clienteNome = localStorage.getItem("agenda_cliente_nome") ?? undefined; const clienteTelefone = localStorage.getItem("agenda_cliente_whatsapp") ?? undefined;
+    if (!clienteNome || !clienteTelefone) { toast.error("Informe seu nome e WhatsApp na tela de entrada antes de agendar."); return; }
+    setCreatingAppointment(true); try { const response = await fetch("/api/appointments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...values, cliente_nome: clienteNome, cliente_telefone: clienteTelefone, estabelecimento_id: estabelecimentoId }) }); const payload = await response.json(); if (!response.ok) { if (response.status === 409) { slotsCache.clear(); toast.error("Esse horário acabou de ser ocupado. Escolha outro horário disponível."); await reloadSlots(); } else toast.error(payload.error ?? "Não foi possível agendar."); return; } toast.success("Agendamento criado com sucesso."); form.reset({ ...values, hora_inicio: "" }); router.push(tenantSlug ? `/${tenantSlug}/cliente` : "/cliente"); } finally { setCreatingAppointment(false); }
   }
+  const selectNextAvailable = () => { if (!nextAvailable) return; selectDate(nextAvailable.date); window.setTimeout(() => form.setValue("hora_inicio", nextAvailable.slot), 0); };
 
-  function onInvalid() {
-    toast.error("Revise os dados do agendamento antes de confirmar.");
-  }
-
-  return (
-    <form className="grid gap-4" onSubmit={form.handleSubmit(onSubmit, onInvalid)}>
-      <div className="grid gap-4 md:grid-cols-2">
-        <label className="space-y-2">
-          <span className="text-sm font-medium">Servico</span>
-          <Select {...form.register("servico_id")}>
-            {services.map((service) => (
-              <option key={service.id} value={service.id}>
-                {service.nome} - {service.duracao_minutos} min
-              </option>
-            ))}
-          </Select>
-        </label>
-        <label className="space-y-2">
-          <span className="text-sm font-medium">Profissional</span>
-          <Select {...form.register("profissional_id")} disabled={availableProfessionals.length === 0}>
-            {availableProfessionals.length === 0 && (
-              <option value="">Nenhum profissional atende este servico</option>
-            )}
-            {availableProfessionals.map((professional) => (
-              <option key={professional.id} value={professional.id}>
-                {professional.nome}
-              </option>
-            ))}
-          </Select>
-        </label>
-      </div>
-      <div className="grid gap-4 md:grid-cols-2">
-        <label className="space-y-2">
-          <span className="flex items-center gap-2 text-sm font-medium">
-            <Calendar size={16} /> Data
-          </span>
-          <Input type="date" min={new Date().toISOString().slice(0, 10)} {...form.register("data")} />
-        </label>
-        <label className="space-y-2">
-          <span className="flex items-center gap-2 text-sm font-medium">
-            <Clock size={16} /> Horario
-          </span>
-          <Select {...form.register("hora_inicio")} disabled={loadingSlots || slots.length === 0}>
-            {loadingSlots && <option>Carregando horarios...</option>}
-            {!loadingSlots && slots.length === 0 && <option value="">Sem horarios disponiveis</option>}
-            {slots.map((slot) => (
-              <option key={slot} value={slot}>
-                {slot}
-              </option>
-            ))}
-          </Select>
-        </label>
-      </div>
-      <label className="space-y-2">
-        <span className="text-sm font-medium">Observacoes</span>
-        <Input placeholder="Alguma preferencia ou detalhe importante?" {...form.register("observacoes")} />
-      </label>
-      <div className="flex flex-col gap-3 rounded-lg border bg-muted/35 p-4 text-sm sm:flex-row sm:items-center sm:justify-between">
-        <span className="flex items-center gap-2 text-muted-foreground">
-          <UserRound size={16} />
-          {clientData.nome
-            ? `${clientData.nome} - ${clientData.telefone}`
-            : `Duracao automatica: ${selectedService?.duracao_minutos ?? 0} minutos`}
-        </span>
-        <Button disabled={form.formState.isSubmitting || creatingAppointment || slots.length === 0}>
-          {(form.formState.isSubmitting || creatingAppointment) && (
-            <Loader2 className="animate-spin" size={16} />
-          )}
-          Confirmar agendamento
-        </Button>
-      </div>
-    </form>
-  );
+  return <form className="grid gap-5" onSubmit={form.handleSubmit(onSubmit, () => toast.error("Escolha serviço, profissional, dia e horário antes de confirmar."))}>
+    <section className="grid gap-3 sm:grid-cols-2"><div><p className="mb-2 text-sm font-semibold">Serviço</p><button type="button" onClick={() => setChoice("service")} className="flex min-h-11 w-full items-center justify-between rounded-lg border bg-background px-3 text-left outline-none transition hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-primary/30" aria-haspopup="dialog"><span>{selectedService ? <><span className="block font-medium">{selectedService.nome}</span><span className="block text-xs text-muted-foreground">{selectedService.duracao_minutos} min · {currency(selectedService.valor)}</span></> : <span className="text-muted-foreground">Escolher serviço</span>}</span><ChevronRight size={18} className="text-muted-foreground" /></button></div><div><p className="mb-2 text-sm font-semibold">Profissional</p><button type="button" onClick={() => setChoice("professional")} disabled={!watch.servico_id || availableProfessionals.length === 0} className="flex min-h-11 w-full items-center justify-between rounded-lg border bg-background px-3 text-left outline-none transition hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-primary/30 disabled:opacity-50" aria-haspopup="dialog"><span>{selectedProfessional ? <span className="flex items-center gap-2"><span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted">{selectedProfessional.foto_url ? <img src={selectedProfessional.foto_url} alt="" className="h-full w-full object-cover" /> : <UserRound size={16} />}</span><span><span className="block font-medium">{selectedProfessional.nome}</span>{selectedProfessional.especialidade && <span className="block text-xs text-muted-foreground">{selectedProfessional.especialidade}</span>}</span></span> : <span className="text-muted-foreground">{watch.servico_id ? "Escolher profissional" : "Escolha um serviço antes"}</span>}</span><ChevronRight size={18} className="text-muted-foreground" /></button>{watch.servico_id && availableProfessionals.length === 0 && <p className="mt-1 text-xs text-muted-foreground">Nenhum profissional atende este serviço.</p>}</div></section>
+    <section className="border-y py-4"><div className="mb-3 flex items-center justify-between"><h2 className="font-semibold">Escolha o dia</h2><Button type="button" variant="ghost" className="h-9 px-2 text-primary" onClick={() => setShowCalendar((value) => !value)}><CalendarDays size={16} />Ver calendário</Button></div><div className="grid grid-cols-4 gap-2 sm:grid-cols-7">{dates.map((date) => { const label = shortDate(date, today); const selected = date === watch.data; return <button key={date} type="button" onClick={() => selectDate(date)} aria-pressed={selected} className={cn("min-h-14 rounded-lg border px-1 text-center text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-primary/30", selected ? "border-primary bg-primary text-primary-foreground" : "bg-background hover:bg-muted/50")}><span className="block text-xs opacity-80">{label.weekday}</span><span className="font-semibold">{label.day}</span></button>; })}</div>{showCalendar && <label className="mt-3 block text-sm font-medium">Data <Input className="mt-2" type="date" min={today} value={watch.data} onChange={(event) => selectDate(event.target.value)} /></label>}</section>
+    <section aria-live="polite"><h2 className="mb-3 font-semibold">Horários disponíveis</h2>{!watch.servico_id || !watch.profissional_id ? <p className="text-sm text-muted-foreground">Escolha serviço e profissional para ver os horários.</p> : loadingSlots ? <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 size={16} className="animate-spin" />Buscando horários...</p> : slotsError ? <div className="rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:bg-red-950/30 dark:text-red-200">{slotsError}<Button type="button" variant="secondary" className="mt-3" onClick={() => { slotsCache.clear(); void reloadSlots(); }}>Tentar novamente</Button></div> : slots.length ? <div className="grid grid-cols-3 gap-2 min-[430px]:grid-cols-4 sm:grid-cols-5">{slots.map((slot) => { const selected = slot === watch.hora_inicio; return <button key={slot} type="button" onClick={() => form.setValue("hora_inicio", slot)} aria-pressed={selected} className={cn("min-h-11 rounded-md border px-2 text-sm font-semibold outline-none transition focus-visible:ring-2 focus-visible:ring-primary/30", selected ? "border-primary bg-primary text-primary-foreground" : "bg-background hover:bg-muted/50")}><span>{slot}</span>{selected && <Check className="ml-1 inline" size={14} aria-hidden="true" />}</button>; })}</div> : <div className="rounded-lg border bg-muted/30 p-4"><p className="font-medium">Nenhum horário disponível neste dia.</p>{nextAvailable ? <div className="mt-3"><p className="text-sm text-muted-foreground">Próximo disponível: <strong className="text-foreground">{formatAppointmentDateTime(nextAvailable.date, nextAvailable.slot, nextAvailable.slot).day} · {nextAvailable.slot}</strong></p><Button type="button" className="mt-3" onClick={selectNextAvailable}>Selecionar este horário</Button></div> : <p className="mt-1 text-sm text-muted-foreground">Verifique outro dia no calendário.</p>}</div>}</section>
+    <section className="border-t pt-4"><button type="button" className="text-sm font-semibold text-primary underline-offset-4 hover:underline" onClick={() => setShowNotes((value) => !value)}>{showNotes ? "Ocultar observação" : "Adicionar observação (opcional)"}</button>{showNotes && <label className="mt-3 block text-sm font-medium">Observação<textarea className="mt-2 min-h-24 w-full rounded-md border bg-background p-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/15" placeholder="Alguma preferência ou detalhe importante?" maxLength={500} {...form.register("observacoes")} /></label>}</section>
+    <section className="rounded-xl border bg-muted/30 p-4"><h2 className="font-semibold">Seu agendamento</h2>{isReady && selectedService && selectedProfessional ? <div className="mt-3 grid gap-1 text-sm"><p className="font-medium">{selectedService.nome}</p><p className="text-muted-foreground">{selectedService.duracao_minutos} min · {currency(selectedService.valor)}</p><p>{selectedProfessional.nome}</p><p>{formatAppointmentDateTime(watch.data, watch.hora_inicio, selectedEnd).compact}</p>{clientData.nome && <p className="mt-2 flex items-center gap-2 text-muted-foreground"><UserRound size={16} />Agendando para {clientData.nome}</p>}</div> : <p className="mt-2 text-sm text-muted-foreground">Seu resumo aparecerá quando serviço, profissional, dia e horário estiverem escolhidos.</p>}</section><Button className="h-12 w-full text-base" disabled={!isReady || creatingAppointment || loadingSlots}>{creatingAppointment && <Loader2 className="animate-spin" size={16} />}Confirmar agendamento</Button>
+    <ChoiceDialog open={choice === "service"} title="Escolha o serviço" onClose={() => setChoice(null)}>{services.map((service) => <button key={service.id} type="button" onClick={() => { form.setValue("servico_id", service.id); form.setValue("hora_inicio", ""); setChoice(null); }} className="rounded-lg border p-4 text-left outline-none hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-primary/30"><span className="block font-semibold">{service.nome}</span><span className="text-sm text-muted-foreground">{service.duracao_minutos} min · {currency(service.valor)}</span></button>)}</ChoiceDialog><ChoiceDialog open={choice === "professional"} title="Escolha o profissional" onClose={() => setChoice(null)}>{availableProfessionals.map((professional) => <button key={professional.id} type="button" onClick={() => { form.setValue("profissional_id", professional.id); form.setValue("hora_inicio", ""); setChoice(null); }} className="flex items-center gap-3 rounded-lg border p-4 text-left outline-none hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-primary/30"><span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted">{professional.foto_url ? <img src={professional.foto_url} alt="" className="h-full w-full object-cover" /> : <UserRound size={18} />}</span><span><span className="block font-semibold">{professional.nome}</span>{professional.especialidade && <span className="text-sm text-muted-foreground">{professional.especialidade}</span>}</span></button>)}</ChoiceDialog>
+  </form>;
 }

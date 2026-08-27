@@ -1,10 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ListChecks } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Navbar } from "@/components/navbar";
 import { AppointmentForm } from "@/components/forms/appointment-form";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { hasSupabaseEnv } from "@/lib/config";
 import { demoProfessionals, demoServices } from "@/lib/demo-data";
 import { createClient } from "@/lib/supabase/server";
@@ -45,28 +43,19 @@ export default async function SchedulePage({ params }: PageProps) {
   return (
     <main>
       <Navbar />
-      <section className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
-        <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+      <section className="mx-auto max-w-3xl px-4 py-5 sm:px-6 sm:py-10">
+        <div className="mb-5 flex flex-col gap-2 sm:mb-8">
           <div>
-            <h1 className="text-3xl font-bold">Novo agendamento</h1>
-            <p className="mt-2 text-muted-foreground">
-              Escolha o servico, o profissional e um horario livre. Horarios ocupados sao bloqueados automaticamente.
+            <h1 className="text-2xl font-bold sm:text-3xl">Novo agendamento</h1>
+            <p className="mt-1 text-sm text-muted-foreground sm:text-base">
+              Escolha o serviço, o profissional e um horário livre.
             </p>
           </div>
-          <Link href={`/${tenantSlug}/cliente`}>
-            <Button variant="secondary" className="w-full sm:w-auto">
-              <ListChecks size={16} />
-              Ver meus agendamentos
-            </Button>
+          <Link href={`/${tenantSlug}/cliente`} className="inline-flex w-fit items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground">
+            <ArrowLeft size={16} /> Meus agendamentos
           </Link>
         </div>
-        <Card>
-          <AppointmentForm
-            services={services ?? []}
-            professionals={professionals ?? []}
-            estabelecimentoId={establishment.id}
-          />
-        </Card>
+        <AppointmentForm services={services ?? []} professionals={professionals ?? []} estabelecimentoId={establishment.id} />
       </section>
     </main>
   );
