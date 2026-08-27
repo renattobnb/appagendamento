@@ -13,6 +13,7 @@ import { createClient } from "@/lib/supabase/client";
 export function Navbar() {
   const { theme, setTheme } = useTheme();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdminMaster, setIsAdminMaster] = useState(false);
   const [isProfessional, setIsProfessional] = useState(false);
   const params = useParams();
   const router = useRouter();
@@ -28,6 +29,7 @@ export function Navbar() {
     localStorage.removeItem("agenda_cliente_nome");
     localStorage.removeItem("agenda_cliente_whatsapp");
     setIsAdmin(false);
+    setIsAdminMaster(false);
     setIsProfessional(false);
     router.push(tenantSlug ? `/${tenantSlug}` : "/");
     router.refresh();
@@ -49,6 +51,7 @@ export function Navbar() {
       if (!user) {
         if (mounted) {
           setIsAdmin(false);
+          setIsAdminMaster(false);
           setIsProfessional(false);
         }
         return;
@@ -61,7 +64,8 @@ export function Navbar() {
         .maybeSingle();
 
       if (mounted) {
-        setIsAdmin(profile?.tipo_usuario === "administrador");
+      setIsAdmin(profile?.tipo_usuario === "administrador");
+      setIsAdminMaster(profile?.tipo_usuario === "admin_master");
         setIsProfessional(profile?.tipo_usuario === "profissional");
       }
     }
@@ -125,6 +129,11 @@ export function Navbar() {
               </Button>
             </Link>
           )}
+          {isAdminMaster && (
+            <Link className="hidden sm:block" href="/admin-master">
+              <Button variant="secondary">Admin Master</Button>
+            </Link>
+          )}
           {tenantSlug && isProfessional && (
             <Link className="hidden sm:block" href={`/${tenantSlug}/profissional`}>
               <Button>
@@ -133,7 +142,7 @@ export function Navbar() {
               </Button>
             </Link>
           )}
-          {tenantSlug && (isAdmin || isProfessional) && (
+          {(isAdmin || isAdminMaster || isProfessional) && (
             <Button variant="secondary" onClick={handleSignOut}>
               <LogOut size={16} />
               Sair

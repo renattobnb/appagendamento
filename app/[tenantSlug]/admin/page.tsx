@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { hasSupabaseEnv } from "@/lib/config";
 import { demoAppointments, demoProfessionals, demoServices } from "@/lib/demo-data";
-import { createClient } from "@/lib/supabase/server";
+import { requireTenantAdministrator } from "@/lib/tenant-access";
 import { currency, dateBR, timeRange } from "@/lib/utils";
 import { getEstablishmentBySlug } from "@/lib/establishments";
 import type { Database } from "@/types/database";
@@ -42,20 +42,10 @@ const chartColors = [
   "bg-indigo-500"
 ];
 
-function slugify(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-}
-
 type AvailabilityRow = Database["public"]["Tables"]["disponibilidade"]["Row"] & {
   profissionais?: { nome: string | null } | { nome: string | null }[] | null;
 };
 
-type EstablishmentRow = Database["public"]["Tables"]["estabelecimentos"]["Row"];
 type ProfessionalServiceRow = Database["public"]["Tables"]["profissional_servicos"]["Row"] & {
   profissionais?: { nome: string | null } | { nome: string | null }[] | null;
   servicos?: { nome: string | null } | { nome: string | null }[] | null;
@@ -104,33 +94,16 @@ export default async function AdminDashboardPage({ params }: PageProps) {
     notFound();
   }
 
+  if (!hasSupabaseEnv()) {
+    redirect(`/${tenantSlug}/admin/login`);
+  }
+  let supabase;
+  try {
+    ({ supabase } = await requireTenantAdministrator(tenantSlug));
+  } catch {
+    redirect(`/${tenantSlug}/admin/login`);
+  }
   const establishmentId = establishment.id;
-  const supabase = hasSupabaseEnv() ? await createClient() : null;
-
-  if (!supabase) {
-    redirect(`/${tenantSlug}/admin/login`);
-  }
-
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect(`/${tenantSlug}/admin/login`);
-  }
-
-  const { data: adminProfile } = await supabase
-    .from("users")
-    .select("tipo_usuario, estabelecimento_id")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (
-    adminProfile?.tipo_usuario !== "administrador" ||
-    adminProfile.estabelecimento_id !== establishmentId
-  ) {
-    redirect(`/${tenantSlug}/admin/login`);
-  }
 
   const [
     { data: appointments },
@@ -138,7 +111,6 @@ export default async function AdminDashboardPage({ params }: PageProps) {
     { data: professionals },
     { data: users },
     { data: availability },
-    { data: establishments },
     { data: professionalServices }
   ] =
     supabase
@@ -159,7 +131,6 @@ export default async function AdminDashboardPage({ params }: PageProps) {
             .order("nome", { referencedTable: "profissionais", ascending: true })
             .order("dia_semana", { ascending: true })
             .order("hora_inicio", { ascending: true }),
-          supabase.from("estabelecimentos").select("*").order("nome"),
           supabase
             .from("profissional_servicos")
             .select("*, profissionais(nome), servicos(nome)")
@@ -172,11 +143,9 @@ export default async function AdminDashboardPage({ params }: PageProps) {
           { data: demoProfessionals },
           { data: [{ id: "demo", nome: "Cliente Demo" }] },
           { data: [] },
-          { data: [establishment] },
           { data: [] }
         ];
   const availabilityRows = (availability ?? []) as AvailabilityRow[];
-  const establishmentRows = (establishments ?? []) as EstablishmentRow[];
   const professionalServiceRows = (professionalServices ?? []) as ProfessionalServiceRow[];
 
   const confirmed = (appointments ?? []).filter((item) => item.status !== "cancelado");
@@ -223,23 +192,9 @@ export default async function AdminDashboardPage({ params }: PageProps) {
     ...servicesByDayAndProfessional.map((day) => day.total)
   );
 
-  async function createEstablishment(formData: FormData) {
-    "use server";
-    const supabase = await createClient();
-    const nome = String(formData.get("nome") ?? "").trim();
-    const slugInput = String(formData.get("slug") ?? "").trim();
-    const slug = slugify(slugInput || nome);
-
-    if (!nome || !slug) return;
-
-    await supabase.from("estabelecimentos").insert({ nome, slug });
-    revalidatePath(`/${tenantSlug}/admin`);
-    revalidatePath("/");
-  }
-
   async function createService(formData: FormData) {
     "use server";
-    const supabase = await createClient();
+    const { supabase } = await requireTenantAdministrator(tenantSlug);
     await supabase.from("servicos").insert({
       nome: String(formData.get("nome") ?? "").trim(),
       descricao: String(formData.get("descricao") ?? "").trim() || null,
@@ -253,7 +208,7 @@ export default async function AdminDashboardPage({ params }: PageProps) {
 
   async function createProfessional(formData: FormData) {
     "use server";
-    const supabase = await createClient();
+    const { supabase } = await requireTenantAdministrator(tenantSlug);
     await supabase.from("profissionais").insert({
       nome: String(formData.get("nome") ?? "").trim(),
       especialidade: String(formData.get("especialidade") ?? "").trim() || null,
@@ -267,7 +222,7 @@ export default async function AdminDashboardPage({ params }: PageProps) {
 
   async function createAvailability(formData: FormData) {
     "use server";
-    const supabase = await createClient();
+    const { supabase } = await requireTenantAdministrator(tenantSlug);
     await supabase.from("disponibilidade").insert({
       profissional_id: String(formData.get("profissional_id")),
       dia_semana: Number(formData.get("dia_semana")),
@@ -280,7 +235,7 @@ export default async function AdminDashboardPage({ params }: PageProps) {
 
   async function createProfessionalService(formData: FormData) {
     "use server";
-    const supabase = await createClient();
+    const { supabase } = await requireTenantAdministrator(tenantSlug);
     const profissionalId = String(formData.get("profissional_id") ?? "");
     const servicoId = String(formData.get("servico_id") ?? "");
 
@@ -296,7 +251,7 @@ export default async function AdminDashboardPage({ params }: PageProps) {
 
   async function deleteProfessionalService(formData: FormData) {
     "use server";
-    const supabase = await createClient();
+    const { supabase } = await requireTenantAdministrator(tenantSlug);
     const profissionalId = String(formData.get("profissional_id") ?? "");
     const servicoId = String(formData.get("servico_id") ?? "");
 
@@ -323,52 +278,9 @@ export default async function AdminDashboardPage({ params }: PageProps) {
     return actionSuccess("Vinculo removido com sucesso.");
   }
 
-  async function updateEstablishment(formData: FormData) {
-    "use server";
-    const supabase = await createClient();
-    const id = String(formData.get("id") ?? "");
-    const nome = String(formData.get("nome") ?? "").trim();
-    const slugInput = String(formData.get("slug") ?? "").trim();
-    const slug = slugify(slugInput || nome);
-
-    if (!id || !nome || !slug) return;
-
-    await supabase.from("estabelecimentos").update({ nome, slug }).eq("id", id);
-    revalidatePath(`/${tenantSlug}/admin`);
-    revalidatePath("/");
-  }
-
-  async function deleteEstablishment(formData: FormData) {
-    "use server";
-    const supabase = await createClient();
-    const id = String(formData.get("id") ?? "");
-
-    if (!id) {
-      return actionFailure("Estabelecimento invalido para exclusao.");
-    }
-
-    if (id === establishmentId) {
-      return actionFailure("Nao e possivel excluir o estabelecimento atual.");
-    }
-
-    const { error, count } = await supabase.from("estabelecimentos").delete({ count: "exact" }).eq("id", id);
-
-    if (error) {
-      return actionFailure(error.message);
-    }
-
-    if (!count) {
-      return actionFailure("Nenhum estabelecimento foi excluido. Atualize a pagina e tente novamente.");
-    }
-
-    revalidatePath(`/${tenantSlug}/admin`);
-    revalidatePath("/");
-    return actionSuccess("Estabelecimento excluido com sucesso.");
-  }
-
   async function updateService(formData: FormData) {
     "use server";
-    const supabase = await createClient();
+    const { supabase } = await requireTenantAdministrator(tenantSlug);
     const id = String(formData.get("id") ?? "");
 
     if (!id) return;
@@ -389,7 +301,7 @@ export default async function AdminDashboardPage({ params }: PageProps) {
 
   async function deleteService(formData: FormData) {
     "use server";
-    const supabase = await createClient();
+    const { supabase } = await requireTenantAdministrator(tenantSlug);
     const id = String(formData.get("id") ?? "");
 
     if (!id) {
@@ -418,7 +330,7 @@ export default async function AdminDashboardPage({ params }: PageProps) {
 
   async function updateProfessional(formData: FormData) {
     "use server";
-    const supabase = await createClient();
+    const { supabase } = await requireTenantAdministrator(tenantSlug);
     const id = String(formData.get("id") ?? "");
 
     if (!id) return;
@@ -439,7 +351,7 @@ export default async function AdminDashboardPage({ params }: PageProps) {
 
   async function deleteProfessional(formData: FormData) {
     "use server";
-    const supabase = await createClient();
+    const { supabase } = await requireTenantAdministrator(tenantSlug);
     const id = String(formData.get("id") ?? "");
 
     if (!id) {
@@ -468,7 +380,7 @@ export default async function AdminDashboardPage({ params }: PageProps) {
 
   async function updateAvailability(formData: FormData) {
     "use server";
-    const supabase = await createClient();
+    const { supabase } = await requireTenantAdministrator(tenantSlug);
     const id = String(formData.get("id") ?? "");
 
     if (!id) return;
@@ -488,7 +400,7 @@ export default async function AdminDashboardPage({ params }: PageProps) {
 
   async function deleteAvailability(formData: FormData) {
     "use server";
-    const supabase = await createClient();
+    const { supabase } = await requireTenantAdministrator(tenantSlug);
     const id = String(formData.get("id") ?? "");
 
     if (!id) {
@@ -879,59 +791,6 @@ export default async function AdminDashboardPage({ params }: PageProps) {
             </div>
           </Card>
 
-          <Card>
-            <div className="mb-4 flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
-              <div>
-                <h2 className="text-lg font-semibold">Estabelecimentos cadastrados</h2>
-                <p className="text-sm text-muted-foreground">Altere nome e link das empresas cadastradas.</p>
-              </div>
-              <span className="text-sm text-muted-foreground">{establishmentRows.length} registros</span>
-            </div>
-            <AdminActionForm
-              action={createEstablishment}
-              className="mb-3 grid gap-3 rounded-lg border border-dashed p-3 lg:grid-cols-[1fr_0.8fr_auto]"
-              successMessage="Estabelecimento cadastrado com sucesso."
-            >
-              <Input name="nome" placeholder="Novo estabelecimento" aria-label="Novo estabelecimento" required />
-              <Input name="slug" placeholder="slug-da-url" aria-label="Slug" />
-              <Button type="submit" title="Cadastrar estabelecimento">
-                <Plus size={16} /> Adicionar
-              </Button>
-            </AdminActionForm>
-            <div className="space-y-3">
-              {establishmentRows.map((item) => (
-                <div key={item.id} className="rounded-lg border p-3">
-                  <AdminActionForm action={updateEstablishment} className="grid gap-3 lg:grid-cols-[1fr_0.8fr_auto]" successMessage="Estabelecimento salvo com sucesso.">
-                    <input type="hidden" name="id" value={item.id} />
-                    <Input name="nome" defaultValue={item.nome} aria-label="Nome do estabelecimento" required />
-                    <Input name="slug" defaultValue={item.slug} aria-label="Slug do estabelecimento" required />
-                    <Button type="submit" className="w-full lg:w-11" title="Salvar estabelecimento">
-                      <Save size={16} />
-                    </Button>
-                  </AdminActionForm>
-                  <div className="mt-2 flex flex-col justify-between gap-2 text-sm text-muted-foreground sm:flex-row sm:items-center">
-                    <span>{item.id === establishmentId ? "Estabelecimento atual" : `/${item.slug}`}</span>
-                    <AdminActionForm action={deleteEstablishment} confirmMessage="Deseja realmente excluir este estabelecimento?" successMessage="Estabelecimento excluido com sucesso.">
-                      <input type="hidden" name="id" value={item.id} />
-                      <Button
-                        type="submit"
-                        variant="danger"
-                        disabled={item.id === establishmentId}
-                        title="Excluir estabelecimento"
-                      >
-                        <Trash2 size={16} /> Excluir
-                      </Button>
-                    </AdminActionForm>
-                  </div>
-                </div>
-              ))}
-              {establishmentRows.length === 0 && (
-                <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-                  Nenhum estabelecimento cadastrado.
-                </p>
-              )}
-            </div>
-          </Card>
         </div>
 
         <div className="mt-6 grid gap-5 xl:grid-cols-[1.3fr_0.7fr]">

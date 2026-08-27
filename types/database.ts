@@ -1,4 +1,4 @@
-export type UserRole = "administrador" | "profissional";
+export type UserRole = "administrador" | "admin_master" | "profissional";
 export type AppointmentStatus = "confirmado" | "pendente" | "cancelado" | "finalizado";
 
 export type Database = {

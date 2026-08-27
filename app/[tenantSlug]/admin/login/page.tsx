@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AdminLoginForm } from "@/components/forms/auth-forms";
 import { Card } from "@/components/ui/card";
@@ -27,10 +26,7 @@ export default async function AdminLoginPage({ params }: PageProps) {
           <AdminLoginForm tenantSlug={tenantSlug} />
         </div>
         <p className="mt-5 text-sm text-muted-foreground">
-          Ainda nao tem acesso?{" "}
-          <Link className="text-primary hover:underline" href={`/${tenantSlug}/cadastro`}>
-            Criar conta administrativa
-          </Link>
+          Ainda nao tem acesso? Solicite ao Admin Master o vinculo da sua conta a {establishment.nome}.
         </p>
       </Card>
     </main>

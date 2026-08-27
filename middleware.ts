@@ -26,6 +26,34 @@ export async function middleware(request: NextRequest) {
   const segments = pathname.split("/").filter(Boolean);
   const firstSegment = segments[0];
 
+  if (firstSegment === "admin-master") {
+    const isMasterLogin = segments[1] === "login";
+    if (!hasSupabaseEnv()) return NextResponse.next();
+
+    let masterResponse = NextResponse.next({ request });
+    const masterSupabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() { return request.cookies.getAll(); },
+          setAll(cookiesToSet: CookieToSet[]) {
+            cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+            masterResponse = NextResponse.next({ request });
+            cookiesToSet.forEach(({ name, value, options }) => masterResponse.cookies.set(name, value, options));
+          }
+        }
+      }
+    );
+    const { data: { user: masterUser } } = await masterSupabase.auth.getUser();
+    if (!isMasterLogin && !masterUser) return NextResponse.redirect(new URL("/admin-master/login", request.url));
+    if (!isMasterLogin && masterUser) {
+      const { data: profile } = await masterSupabase.from("users").select("tipo_usuario").eq("id", masterUser.id).maybeSingle();
+      if (profile?.tipo_usuario !== "admin_master") return NextResponse.redirect(new URL("/admin-master/login", request.url));
+    }
+    return masterResponse;
+  }
+
   // Redireciona rotas legadas (sem slug de tenant) para o tenant padrão
   if (LEGACY_ROUTES.includes(firstSegment)) {
     const newUrl = request.nextUrl.clone();

@@ -228,7 +228,7 @@ export function ResetPasswordForm() {
   );
 }
 
-export function AdminLoginForm({ tenantSlug }: { tenantSlug: string }) {
+export function AdminLoginForm({ tenantSlug, adminMaster = false }: { tenantSlug: string; adminMaster?: boolean }) {
   const router = useRouter();
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -257,6 +257,18 @@ export function AdminLoginForm({ tenantSlug }: { tenantSlug: string }) {
           .eq("id", user.id)
           .maybeSingle()
       : { data: null };
+
+    if (adminMaster) {
+      if (profile?.tipo_usuario !== "admin_master") {
+        await supabase.auth.signOut();
+        toast.error("Este usuario nao possui acesso de Admin Master.");
+        return;
+      }
+      toast.success("Acesso de Admin Master liberado.");
+      router.refresh();
+      router.push("/admin-master");
+      return;
+    }
 
     const { data: establishment } = profile?.estabelecimento_id
       ? await supabase
