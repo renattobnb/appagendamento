@@ -1,5 +1,4 @@
 import { CalendarCheck, DollarSign, Sparkles, Users } from "lucide-react";
-import { Card } from "@/components/ui/card";
 import { currency } from "@/lib/utils";
 
 export function AdminMetrics({
@@ -21,18 +20,18 @@ export function AdminMetrics({
   ];
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      {items.map((item) => (
-        <Card key={item.label} className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-muted-foreground">{item.label}</p>
-            <p className="mt-2 text-2xl font-bold">{item.value}</p>
+    <dl className="grid grid-cols-2 gap-2.5 sm:gap-4 xl:grid-cols-4">
+      {items.map(({ label, value, icon: Icon }) => (
+        <div key={label} className="flex min-w-0 items-start justify-between gap-2 rounded-lg border bg-background/65 p-3 shadow-sm sm:p-4">
+          <div className="min-w-0">
+            <dt className="truncate text-xs font-medium text-muted-foreground sm:text-sm">{label}</dt>
+            <dd className="mt-1 truncate text-lg font-bold tracking-tight sm:text-2xl">{value}</dd>
           </div>
-          <span className="grid size-11 place-items-center rounded-md bg-primary/12 text-primary">
-            <item.icon size={21} />
+          <span className="grid size-8 shrink-0 place-items-center rounded-md bg-primary/12 text-primary sm:size-10" aria-hidden="true">
+            <Icon size={17} className="sm:size-[19px]" />
           </span>
-        </Card>
+        </div>
       ))}
-    </div>
+    </dl>
   );
 }

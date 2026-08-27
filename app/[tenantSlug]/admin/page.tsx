@@ -23,7 +23,7 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
   try { ({ supabase } = await requireTenantAdministrator(tenantSlug)); } catch { redirect(`/${tenantSlug}/admin/login`); }
   const establishmentId = establishment.id;
   const [appointmentResult, serviceResult, professionalResult, userResult, availabilityResult, relationResult] = await Promise.all([
-    supabase.from("agendamentos").select("*, servicos(nome, valor), profissionais(nome)").eq("estabelecimento_id", establishmentId).order("data", { ascending: false }).order("hora_inicio", { ascending: false }),
+    supabase.from("agendamentos").select("*, servicos(nome, valor), profissionais(nome)").eq("estabelecimento_id", establishmentId).order("data", { ascending: true }).order("hora_inicio", { ascending: true }),
     supabase.from("servicos").select("*").eq("estabelecimento_id", establishmentId).order("nome"),
     supabase.from("profissionais").select("*").eq("estabelecimento_id", establishmentId).order("nome"),
     supabase.from("users").select("id").eq("estabelecimento_id", establishmentId),
