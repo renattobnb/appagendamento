@@ -5,7 +5,7 @@ const labels: Record<AppointmentStatus, string> = {
   confirmado: "Confirmado",
   pendente: "Pendente",
   cancelado: "Cancelado",
-  finalizado: "Finalizado"
+  finalizado: "Concluído"
 };
 
 const colors: Record<AppointmentStatus, string> = {
