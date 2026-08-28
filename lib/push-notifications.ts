@@ -2,6 +2,7 @@ import webpush, { type PushSubscription } from "web-push";
 import {
   deletePushSubscription,
   findClientPushSubscriptions,
+  findCurrentProfessionalPushSubscription,
   findProfessionalPushSubscriptions,
   type PushSubscriptionRecord
 } from "@/lib/push-subscriptions-store";
@@ -52,16 +53,15 @@ function toPushSubscription(subscription: PushSubscriptionRecord): PushSubscript
 }
 
 async function sendToSubscriptions(subscriptions: PushSubscriptionRecord[], payload: PushPayload) {
-  if (!subscriptions.length) {
-    return { sent: 0, failed: 0, reason: "no_subscriptions" };
-  }
+  if (!subscriptions.length) return { sent: 0, failed: 0, invalid: 0, reason: "no_subscriptions" };
 
   if (!configureWebPush()) {
-    return { sent: 0, failed: subscriptions.length, reason: "missing_push_config" };
+    return { sent: 0, failed: subscriptions.length, invalid: 0, reason: "missing_push_config" };
   }
 
   let sent = 0;
   let failed = 0;
+  let invalid = 0;
 
   await Promise.all(
     subscriptions.map(async (subscription) => {
@@ -79,13 +79,14 @@ async function sendToSubscriptions(subscriptions: PushSubscriptionRecord[], payl
             : null;
 
         if (statusCode === 404 || statusCode === 410) {
+          invalid += 1;
           await deletePushSubscription(subscription.id);
         }
       }
     })
   );
 
-  return { sent, failed };
+  return { sent, failed, invalid };
 }
 
 export async function sendPushToProfessional({
@@ -103,6 +104,31 @@ export async function sendPushToProfessional({
   });
 
   return sendToSubscriptions(subscriptions, payload);
+}
+
+export async function sendPushToCurrentProfessionalSubscription({
+  estabelecimentoId,
+  profissionalId,
+  accessTokenId,
+  endpoint,
+  payload
+}: {
+  estabelecimentoId: string;
+  profissionalId: string;
+  accessTokenId: string;
+  endpoint: string;
+  payload: PushPayload;
+}) {
+  const subscription = await findCurrentProfessionalPushSubscription({
+    estabelecimentoId,
+    profissionalId,
+    accessTokenId,
+    endpoint
+  });
+
+  if (!subscription) return { sent: false, invalid: true };
+  const result = await sendToSubscriptions([subscription], payload);
+  return { sent: result.sent === 1, invalid: result.invalid > 0 || result.reason === "no_subscriptions" };
 }
 
 export async function sendPushToClient({

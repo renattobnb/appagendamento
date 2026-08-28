@@ -20,6 +20,13 @@ export type PushSubscriptionRecord = {
   auth: string;
 };
 
+type ProfessionalSubscriptionLookup = {
+  estabelecimentoId: string;
+  profissionalId: string;
+  accessTokenId: string;
+  endpoint: string;
+};
+
 function canUseServiceRole() {
   return Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY?.trim());
 }
@@ -50,7 +57,8 @@ export async function upsertPushSubscription(values: PushSubscriptionInsert) {
       {
         ...values,
         updated_at: new Date().toISOString(),
-        last_used_at: new Date().toISOString()
+        last_used_at: new Date().toISOString(),
+        revoked_at: null
       },
       { onConflict: "endpoint" }
     );
@@ -84,6 +92,7 @@ export async function upsertPushSubscription(values: PushSubscriptionInsert) {
           p256dh = excluded.p256dh,
           auth = excluded.auth,
           user_agent = excluded.user_agent,
+          revoked_at = null,
           updated_at = now(),
           last_used_at = now()
       `,
@@ -98,6 +107,88 @@ export async function upsertPushSubscription(values: PushSubscriptionInsert) {
         values.auth,
         values.user_agent
       ]
+    )
+  );
+}
+
+export async function findCurrentProfessionalPushSubscription({
+  estabelecimentoId,
+  profissionalId,
+  accessTokenId,
+  endpoint
+}: ProfessionalSubscriptionLookup) {
+  if (canUseServiceRole()) {
+    const supabase = createServiceClient();
+    const { data, error } = await supabase
+      .from("push_subscriptions")
+      .select("id,endpoint,p256dh,auth")
+      .eq("estabelecimento_id", estabelecimentoId)
+      .eq("tipo_destinatario", "profissional")
+      .eq("profissional_id", profissionalId)
+      .eq("access_token_id", accessTokenId)
+      .eq("endpoint", endpoint)
+      .is("revoked_at", null)
+      .maybeSingle();
+
+    if (error) throw new Error(error.message);
+    return (data as PushSubscriptionRecord | null) ?? null;
+  }
+
+  return withPgClient(async (client) => {
+    const { rows } = await client.query<PushSubscriptionRecord>(
+      `
+        select id, endpoint, p256dh, auth
+        from public.push_subscriptions
+        where estabelecimento_id = $1
+          and tipo_destinatario = 'profissional'
+          and profissional_id = $2
+          and access_token_id = $3
+          and endpoint = $4
+          and revoked_at is null
+        limit 1
+      `,
+      [estabelecimentoId, profissionalId, accessTokenId, endpoint]
+    );
+
+    return rows[0] ?? null;
+  });
+}
+
+export async function revokeCurrentProfessionalPushSubscription({
+  estabelecimentoId,
+  profissionalId,
+  accessTokenId,
+  endpoint
+}: ProfessionalSubscriptionLookup) {
+  if (canUseServiceRole()) {
+    const supabase = createServiceClient();
+    const { error } = await supabase
+      .from("push_subscriptions")
+      .update({ revoked_at: new Date().toISOString() })
+      .eq("estabelecimento_id", estabelecimentoId)
+      .eq("tipo_destinatario", "profissional")
+      .eq("profissional_id", profissionalId)
+      .eq("access_token_id", accessTokenId)
+      .eq("endpoint", endpoint)
+      .is("revoked_at", null);
+
+    if (error) throw new Error(error.message);
+    return;
+  }
+
+  await withPgClient((client) =>
+    client.query(
+      `
+        update public.push_subscriptions
+        set revoked_at = now(), updated_at = now()
+        where estabelecimento_id = $1
+          and tipo_destinatario = 'profissional'
+          and profissional_id = $2
+          and access_token_id = $3
+          and endpoint = $4
+          and revoked_at is null
+      `,
+      [estabelecimentoId, profissionalId, accessTokenId, endpoint]
     )
   );
 }
