@@ -11,6 +11,7 @@ type PushSubscriptionManagerProps = {
   profissionalId?: string;
   clienteTelefone?: string | null;
   secureProfessionalAccess?: boolean;
+  compactWhenGranted?: boolean;
 };
 
 function urlBase64ToUint8Array(base64String: string) {
@@ -67,9 +68,10 @@ export function PushSubscriptionManager({
   tipoDestinatario,
   profissionalId,
   clienteTelefone,
-  secureProfessionalAccess = false
+  secureProfessionalAccess = false,
+  compactWhenGranted = false
 }: PushSubscriptionManagerProps) {
-  const [supported, setSupported] = useState(false);
+  const [supported, setSupported] = useState<boolean | null>(null);
   const [permission, setPermission] = useState<NotificationPermission>("default");
   const [loading, setLoading] = useState(false);
 
@@ -159,9 +161,12 @@ export function PushSubscriptionManager({
     }
   }
 
+  if (supported === null) return null;
   if (!supported) return <p className="rounded-lg border px-3 py-2 text-sm text-muted-foreground">Notificações não são suportadas neste navegador.</p>;
 
   if (permission === "denied") return <p className="rounded-lg border px-3 py-2 text-sm text-muted-foreground">Permissão bloqueada. Ative as notificações nas configurações do navegador.</p>;
+
+  if (compactWhenGranted && permission === "granted") return <p className="flex min-h-8 items-center gap-2 text-sm font-medium text-muted-foreground"><BellRing size={16} className="text-primary"/> Notificações ativadas</p>;
 
   return (
     <div className="rounded-lg border px-3 py-3">
