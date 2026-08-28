@@ -5,6 +5,7 @@ type PushSubscriptionInsert = {
   estabelecimento_id: string;
   tipo_destinatario: "cliente" | "profissional";
   profissional_id: string | null;
+  access_token_id?: string | null;
   cliente_telefone: string | null;
   endpoint: string;
   p256dh: string;
@@ -48,7 +49,8 @@ export async function upsertPushSubscription(values: PushSubscriptionInsert) {
     const { error } = await supabase.from("push_subscriptions").upsert(
       {
         ...values,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        last_used_at: new Date().toISOString()
       },
       { onConflict: "endpoint" }
     );
@@ -65,28 +67,32 @@ export async function upsertPushSubscription(values: PushSubscriptionInsert) {
           tipo_destinatario,
           profissional_id,
           cliente_telefone,
+          access_token_id,
           endpoint,
           p256dh,
           auth,
           user_agent
         )
-        values ($1, $2, $3, $4, $5, $6, $7, $8)
+        values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         on conflict (endpoint) do update
         set
           estabelecimento_id = excluded.estabelecimento_id,
           tipo_destinatario = excluded.tipo_destinatario,
           profissional_id = excluded.profissional_id,
           cliente_telefone = excluded.cliente_telefone,
+          access_token_id = excluded.access_token_id,
           p256dh = excluded.p256dh,
           auth = excluded.auth,
           user_agent = excluded.user_agent,
-          updated_at = now()
+          updated_at = now(),
+          last_used_at = now()
       `,
       [
         values.estabelecimento_id,
         values.tipo_destinatario,
         values.profissional_id,
         values.cliente_telefone,
+        values.access_token_id ?? null,
         values.endpoint,
         values.p256dh,
         values.auth,
@@ -110,7 +116,8 @@ export async function findProfessionalPushSubscriptions({
       .select("id,endpoint,p256dh,auth")
       .eq("estabelecimento_id", estabelecimentoId)
       .eq("tipo_destinatario", "profissional")
-      .eq("profissional_id", profissionalId);
+      .eq("profissional_id", profissionalId)
+      .is("revoked_at", null);
 
     return (data ?? []) as PushSubscriptionRecord[];
   }
@@ -123,6 +130,7 @@ export async function findProfessionalPushSubscriptions({
         where estabelecimento_id = $1
           and tipo_destinatario = 'profissional'
           and profissional_id = $2
+          and revoked_at is null
       `,
       [estabelecimentoId, profissionalId]
     );

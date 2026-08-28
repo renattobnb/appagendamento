@@ -136,6 +136,9 @@ export type Database = {
           cancelado_por: string | null;
           motivo_cancelamento: string | null;
           cancelado_em: string | null;
+          finalizado_em: string | null;
+          finalizado_por: string | null;
+          atualizado_em: string;
           estabelecimento_id: string;
           created_at: string;
         };
@@ -154,6 +157,9 @@ export type Database = {
           cancelado_por?: string | null;
           motivo_cancelamento?: string | null;
           cancelado_em?: string | null;
+          finalizado_em?: string | null;
+          finalizado_por?: string | null;
+          atualizado_em?: string;
           estabelecimento_id: string;
           created_at?: string;
         };
@@ -207,6 +213,7 @@ export type Database = {
           estabelecimento_id: string;
           tipo_destinatario: "cliente" | "profissional";
           profissional_id: string | null;
+          access_token_id: string | null;
           cliente_telefone: string | null;
           endpoint: string;
           p256dh: string;
@@ -214,12 +221,15 @@ export type Database = {
           user_agent: string | null;
           created_at: string;
           updated_at: string;
+          last_used_at: string | null;
+          revoked_at: string | null;
         };
         Insert: {
           id?: string;
           estabelecimento_id: string;
           tipo_destinatario: "cliente" | "profissional";
           profissional_id?: string | null;
+          access_token_id?: string | null;
           cliente_telefone?: string | null;
           endpoint: string;
           p256dh: string;
@@ -227,6 +237,8 @@ export type Database = {
           user_agent?: string | null;
           created_at?: string;
           updated_at?: string;
+          last_used_at?: string | null;
+          revoked_at?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["push_subscriptions"]["Insert"]>;
       };

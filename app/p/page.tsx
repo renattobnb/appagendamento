@@ -15,8 +15,8 @@ function fortalezaDate(offsetDays = 0) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
-export default async function ProfessionalMagicAgendaPage({ searchParams }: { searchParams: Promise<{ period?: string }> }) {
-  const [{ period }, cookieStore] = await Promise.all([searchParams, cookies()]);
+export default async function ProfessionalMagicAgendaPage({ searchParams }: { searchParams: Promise<{ period?: string; view?: string }> }) {
+  const [{ period, view }, cookieStore] = await Promise.all([searchParams, cookies()]);
   const token = cookieStore.get(PROFESSIONAL_ACCESS_COOKIE)?.value;
   if (!token) redirect("/p/acesso-invalido");
   const access = await resolveProfessionalAccess(token);
@@ -31,14 +31,17 @@ export default async function ProfessionalMagicAgendaPage({ searchParams }: { se
 
   const today = fortalezaDate(), tomorrow = fortalezaDate(1);
   const selectedPeriod = period === "tomorrow" ? "tomorrow" : period === "upcoming" ? "upcoming" : "today";
-  let query = service.from("agendamentos").select("id,cliente_nome,cliente_telefone,data,hora_inicio,hora_fim,status,observacoes,servicos(nome)").eq("profissional_id", access.professional_id).eq("estabelecimento_id", access.establishment_id).order("data").order("hora_inicio");
+  let query = service.from("agendamentos").select("id,cliente_nome,cliente_telefone,data,hora_inicio,hora_fim,status,observacoes,motivo_cancelamento,servicos(nome)").eq("profissional_id", access.professional_id).eq("estabelecimento_id", access.establishment_id).in("status", ["pendente", "confirmado"]).order("data").order("hora_inicio");
   query = selectedPeriod === "today" ? query.eq("data", today) : selectedPeriod === "tomorrow" ? query.eq("data", tomorrow) : query.gte("data", today).limit(50);
-  const [{ data, error: appointmentsError }, { data: next, error: nextAppointmentError }] = await Promise.all([
+  let historyQuery = service.from("agendamentos").select("id,cliente_nome,cliente_telefone,data,hora_inicio,hora_fim,status,observacoes,motivo_cancelamento,servicos(nome)").eq("profissional_id", access.professional_id).eq("estabelecimento_id", access.establishment_id).in("status", ["finalizado", "cancelado"]).order("data", { ascending: false }).order("hora_inicio", { ascending: false });
+  historyQuery = view === "history" ? historyQuery.limit(50) : selectedPeriod === "today" ? historyQuery.eq("data", today) : selectedPeriod === "tomorrow" ? historyQuery.eq("data", tomorrow) : historyQuery.gte("data", today).limit(50);
+  const [{ data, error: appointmentsError }, { data: history, error: historyError }, { data: next, error: nextAppointmentError }] = await Promise.all([
     query,
+    historyQuery,
     service.from("agendamentos").select("id,cliente_nome,cliente_telefone,data,hora_inicio,hora_fim,status,observacoes,servicos(nome)").eq("profissional_id", access.professional_id).eq("estabelecimento_id", access.establishment_id).gte("data", today).in("status", ["pendente", "confirmado"]).order("data").order("hora_inicio").limit(1)
   ]);
-  if (appointmentsError || nextAppointmentError) throw new Error("Não foi possível carregar os atendimentos do profissional.");
+  if (appointmentsError || historyError || nextAppointmentError) throw new Error("Não foi possível carregar os atendimentos do profissional.");
   await touchProfessionalAccess(token, access);
   const normalize = (item: any) => ({ ...item, status: item.status as AppointmentStatus, servicoNome: (Array.isArray(item.servicos) ? item.servicos[0] : item.servicos)?.nome ?? null });
-  return <ProfessionalMagicAgenda professionalName={professional.nome} establishmentName={establishment.nome} appointments={(data ?? []).map(normalize)} nextAppointment={next?.[0] ? normalize(next[0]) : null} today={today} tomorrow={tomorrow}/>;
+  return <ProfessionalMagicAgenda professionalName={professional.nome} establishmentName={establishment.nome} appointments={(data ?? []).map(normalize)} history={(history ?? []).map(normalize)} nextAppointment={next?.[0] ? normalize(next[0]) : null} today={today} tomorrow={tomorrow}/>;
 }

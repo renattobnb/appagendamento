@@ -79,12 +79,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Profissional indisponivel" }, { status: 404 });
   }
 
-  const { data: establishment } = await supabase
-    .from("estabelecimentos")
-    .select("slug")
-    .eq("id", values.estabelecimento_id)
-    .maybeSingle();
-
   const horaFim = calculateEndTime(values.data, values.hora_inicio, service.duracao_minutos);
 
   const { data: availability } = await supabase
@@ -165,8 +159,8 @@ export async function POST(request: NextRequest) {
     profissionalId: values.profissional_id,
     payload: {
       title: "Novo agendamento",
-      body: `${clienteNome} agendou ${service.nome} em ${dateBR(values.data)} às ${values.hora_inicio}.`,
-      url: `/${establishment?.slug ?? "padrao"}/profissional`
+      body: `${dateBR(values.data)} às ${values.hora_inicio} · ${service.nome}`,
+      url: "/p"
     }
   }).catch((error) => ({
     sent: 0,

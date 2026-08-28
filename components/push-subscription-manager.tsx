@@ -6,10 +6,11 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
 type PushSubscriptionManagerProps = {
-  estabelecimentoId: string;
-  tipoDestinatario: "cliente" | "profissional";
+  estabelecimentoId?: string;
+  tipoDestinatario?: "cliente" | "profissional";
   profissionalId?: string;
   clienteTelefone?: string | null;
+  secureProfessionalAccess?: boolean;
 };
 
 function urlBase64ToUint8Array(base64String: string) {
@@ -65,7 +66,8 @@ export function PushSubscriptionManager({
   estabelecimentoId,
   tipoDestinatario,
   profissionalId,
-  clienteTelefone
+  clienteTelefone,
+  secureProfessionalAccess = false
 }: PushSubscriptionManagerProps) {
   const [supported, setSupported] = useState(false);
   const [permission, setPermission] = useState<NotificationPermission>("default");
@@ -86,13 +88,14 @@ export function PushSubscriptionManager({
       return;
     }
 
-    const phone = tipoDestinatario === "cliente" ? getClientPhone(clienteTelefone) : null;
-    if (tipoDestinatario === "cliente" && !phone) {
+    const recipientType = secureProfessionalAccess ? "profissional" : tipoDestinatario;
+    const phone = recipientType === "cliente" ? getClientPhone(clienteTelefone) : null;
+    if (recipientType === "cliente" && !phone) {
       toast.error("Informe seu WhatsApp antes de ativar notificacoes.");
       return;
     }
 
-    if (tipoDestinatario === "profissional" && !profissionalId) {
+    if (!secureProfessionalAccess && recipientType === "profissional" && !profissionalId) {
       toast.error("Profissional nao identificado para notificacoes.");
       return;
     }
@@ -131,10 +134,12 @@ export function PushSubscriptionManager({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          estabelecimento_id: estabelecimentoId,
-          tipo_destinatario: tipoDestinatario,
-          profissional_id: tipoDestinatario === "profissional" ? profissionalId : null,
-          cliente_telefone: tipoDestinatario === "cliente" ? phone : null,
+          ...(secureProfessionalAccess ? { secure_professional_access: true } : {
+            estabelecimento_id: estabelecimentoId,
+            tipo_destinatario: recipientType,
+            profissional_id: recipientType === "profissional" ? profissionalId : null,
+            cliente_telefone: recipientType === "cliente" ? phone : null
+          }),
           subscription: serializedSubscription
         })
       });
@@ -154,24 +159,18 @@ export function PushSubscriptionManager({
     }
   }
 
-  if (!supported) return null;
+  if (!supported) return <p className="rounded-lg border px-3 py-2 text-sm text-muted-foreground">Notificações não são suportadas neste navegador.</p>;
+
+  if (permission === "denied") return <p className="rounded-lg border px-3 py-2 text-sm text-muted-foreground">Permissão bloqueada. Ative as notificações nas configurações do navegador.</p>;
 
   return (
-    <Button
-      type="button"
-      variant={permission === "granted" ? "secondary" : "ghost"}
-      className="w-full sm:w-auto"
-      disabled={loading || permission === "denied"}
-      onClick={activatePush}
-    >
-      {permission === "granted" ? <BellRing size={16} /> : <Bell size={16} />}
-      {permission === "granted"
-        ? loading
-          ? "Sincronizando..."
-          : "Sincronizar notificacoes"
-        : loading
-          ? "Ativando..."
-          : "Ativar notificacoes"}
-    </Button>
+    <div className="rounded-lg border px-3 py-3">
+      <p className="text-sm font-semibold">Receba avisos de novos agendamentos</p>
+      <p className="mt-1 text-sm text-muted-foreground">Ative as notificações para ser avisado mesmo quando a agenda estiver fechada.</p>
+      <Button type="button" variant={permission === "granted" ? "secondary" : "ghost"} className="mt-3 w-full sm:w-auto" disabled={loading} onClick={activatePush}>
+        {permission === "granted" ? <BellRing size={16} /> : <Bell size={16} />}
+        {permission === "granted" ? loading ? "Sincronizando..." : "Notificações ativadas" : loading ? "Ativando..." : "Ativar notificações"}
+      </Button>
+    </div>
   );
 }
