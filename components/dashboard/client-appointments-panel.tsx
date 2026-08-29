@@ -1,18 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { CalendarPlus } from "lucide-react";
-import { useState } from "react";
-import { CancelAppointmentButton } from "@/components/forms/cancel-appointment-button";
+import { MoreHorizontal, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { ReviewAppointmentForm, ReviewSummary } from "@/components/forms/review-appointment-form";
 import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { formatAppointmentDateTime } from "@/lib/utils";
 import type { AppointmentStatus } from "@/types/database";
 
 export type ClientAppointmentItem = {
   id: string;
+  servico_id?: string | null;
+  profissional_id?: string | null;
   data: string;
   hora_inicio: string;
   hora_fim: string;
@@ -24,188 +26,75 @@ export type ClientAppointmentItem = {
   avaliacao_comentario?: string | null;
 };
 
-type ClientAppointmentsPanelProps = {
-  bookingHref: string;
-  upcoming: ClientAppointmentItem[];
-  history: ClientAppointmentItem[];
-  establishmentId?: string;
-  guestPhone?: string | null;
-  showReviews?: boolean;
-};
+type Props = { bookingHref: string; upcoming: ClientAppointmentItem[]; history: ClientAppointmentItem[]; establishmentId?: string; guestPhone?: string | null; showReviews?: boolean };
+const INITIAL_UPCOMING_SIZE = 3;
+const INITIAL_HISTORY_SIZE = 5;
 
-const INITIAL_HISTORY_SIZE = 6;
-
-function AppointmentIdentity({ appointment }: { appointment: ClientAppointmentItem }) {
-  return (
-    <div className="min-w-0">
-      <p className="truncate font-semibold">{appointment.servicos?.nome ?? "Serviço"}</p>
-      <p className="truncate text-sm text-muted-foreground">
-        {appointment.profissionais?.nome ?? "Profissional não informado"}
-      </p>
-    </div>
-  );
+function identity(appointment: ClientAppointmentItem) {
+  return <><p className="break-words font-semibold">{appointment.servicos?.nome ?? "Serviço"}</p><p className="mt-0.5 break-words text-sm text-muted-foreground">{appointment.profissionais?.nome ?? "Profissional não informado"}</p></>;
 }
 
-function AppointmentTime({ appointment, compact = false }: { appointment: ClientAppointmentItem; compact?: boolean }) {
-  const formatted = formatAppointmentDateTime(appointment.data, appointment.hora_inicio, appointment.hora_fim);
-
-  return compact ? (
-    <p className="mt-1 text-sm text-muted-foreground">{formatted.compact}</p>
-  ) : (
-    <div className="mt-4 space-y-1">
-      <p className="text-base font-medium">{formatted.day}</p>
-      <p className="text-lg font-semibold tracking-tight">{formatted.time}</p>
-    </div>
-  );
+function bookingAgainHref(bookingHref: string, appointment: ClientAppointmentItem) {
+  const query = new URLSearchParams();
+  if (appointment.servico_id) query.set("service", appointment.servico_id);
+  if (appointment.profissional_id) query.set("professional", appointment.profissional_id);
+  return query.size ? `${bookingHref}?${query}` : bookingHref;
 }
 
-function AppointmentActions({ appointment, establishmentId, guestPhone, showReviews }: {
-  appointment: ClientAppointmentItem;
-  establishmentId?: string;
-  guestPhone?: string | null;
-  showReviews?: boolean;
-}) {
-  if (appointment.status === "finalizado" && showReviews && establishmentId) {
-    return appointment.avaliacao_nota ? (
-      <ReviewSummary nota={appointment.avaliacao_nota} comentario={appointment.avaliacao_comentario} />
-    ) : (
-      <ReviewAppointmentForm appointmentId={appointment.id} estabelecimentoId={establishmentId} clienteTelefone={appointment.cliente_telefone ?? guestPhone} />
-    );
+function AppointmentMenu({ appointment, onCancel }: { appointment: ClientAppointmentItem; onCancel: () => void }) {
+  const [open, setOpen] = useState(false);
+  return <div className="relative shrink-0"><Button type="button" variant="ghost" className="size-11 px-0" aria-label="Ações do agendamento" aria-expanded={open} onClick={() => setOpen((value) => !value)}><MoreHorizontal size={20} /></Button>{open && <div className="absolute right-0 z-10 mt-1 w-56 rounded-lg border bg-background p-1 shadow-lg"><button type="button" className="flex min-h-11 w-full items-center rounded-md px-3 text-left text-sm font-semibold text-red-600 hover:bg-red-50" onClick={() => { setOpen(false); onCancel(); }}>Cancelar agendamento</button></div>}</div>;
+}
+
+function CancelDialog({ appointment, establishmentId, guestPhone, onClose, onSuccess }: { appointment: ClientAppointmentItem | null; establishmentId?: string; guestPhone?: string | null; onClose: () => void; onSuccess: () => void }) {
+  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    if (!appointment) return;
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape" && !loading) onClose(); };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [appointment, loading, onClose]);
+  if (!appointment || !establishmentId) return null;
+  const currentAppointment = appointment;
+  const formatted = formatAppointmentDateTime(currentAppointment.data, currentAppointment.hora_inicio, currentAppointment.hora_fim);
+  async function cancel() {
+    const phone = guestPhone || localStorage.getItem("agenda_cliente_whatsapp");
+    if (!phone) { toast.error("Não foi possível identificar seu WhatsApp. Entre novamente."); return; }
+    setLoading(true);
+    try {
+      const response = await fetch("/api/appointments/cancel", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ appointment_id: currentAppointment.id, cliente_telefone: phone, estabelecimento_id: establishmentId }) });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        if (response.status === 404) { toast.error("Este agendamento foi atualizado. Atualizamos seus dados."); onSuccess(); return; }
+        toast.error(payload.error ?? "Não foi possível cancelar o agendamento."); return;
+      }
+      toast.success("Agendamento cancelado."); onSuccess();
+    } finally { setLoading(false); }
   }
-
-  return null;
+  return <div className="fixed inset-0 z-50 flex items-end bg-black/45 sm:items-center sm:justify-center sm:p-4" role="presentation"><section role="dialog" aria-modal="true" aria-labelledby="client-cancel-title" className="w-full rounded-t-2xl bg-background px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 shadow-xl sm:max-w-md sm:rounded-xl sm:p-5"><div className="mx-auto mb-3 h-1 w-10 rounded-full bg-muted sm:hidden" /><div className="flex items-start justify-between gap-3"><h2 id="client-cancel-title" className="text-lg font-bold">Cancelar agendamento?</h2><Button type="button" variant="ghost" className="size-11 shrink-0 px-0" aria-label="Fechar" disabled={loading} onClick={onClose}><X size={18} /></Button></div><div className="mt-3 rounded-lg bg-muted/60 p-3">{identity(currentAppointment)}<p className="mt-2 text-sm text-muted-foreground">{formatted.compact}</p></div><p className="mt-4 text-sm text-muted-foreground">Tem certeza que deseja cancelar este horário?</p><div className="mt-5 grid grid-cols-2 gap-3"><Button type="button" variant="secondary" disabled={loading} onClick={onClose}>Voltar</Button><Button type="button" variant="danger" disabled={loading} onClick={() => void cancel()}>{loading ? "Cancelando..." : "Cancelar agendamento"}</Button></div></section></div>;
 }
 
-export function ClientAppointmentsPanel({
-  bookingHref,
-  upcoming,
-  history,
-  establishmentId,
-  guestPhone,
-  showReviews = false
-}: ClientAppointmentsPanelProps) {
+function HistoryActions({ appointment, bookingHref, establishmentId, guestPhone, showReviews }: { appointment: ClientAppointmentItem; bookingHref: string; establishmentId?: string; guestPhone?: string | null; showReviews?: boolean }) {
+  if (appointment.status !== "finalizado") return null;
+  return <div className="mt-3 flex flex-wrap items-center gap-2">{showReviews && establishmentId && (appointment.avaliacao_nota ? <ReviewSummary nota={appointment.avaliacao_nota} comentario={appointment.avaliacao_comentario} /> : <ReviewAppointmentForm appointmentId={appointment.id} estabelecimentoId={establishmentId} clienteTelefone={appointment.cliente_telefone ?? guestPhone} />)}<Link href={bookingAgainHref(bookingHref, appointment)}><Button type="button" variant="secondary">Agendar novamente</Button></Link></div>;
+}
+
+export function ClientAppointmentsPanel({ bookingHref, upcoming, history, establishmentId, guestPhone, showReviews = false }: Props) {
+  const router = useRouter();
+  const [showAllUpcoming, setShowAllUpcoming] = useState(false);
   const [showAllHistory, setShowAllHistory] = useState(false);
+  const [cancelAppointment, setCancelAppointment] = useState<ClientAppointmentItem | null>(null);
+  const visibleUpcoming = showAllUpcoming ? upcoming : upcoming.slice(0, INITIAL_UPCOMING_SIZE);
   const visibleHistory = showAllHistory ? history : history.slice(0, INITIAL_HISTORY_SIZE);
-  const firstUpcoming = upcoming[0];
-  const additionalUpcoming = upcoming.slice(1, 3);
 
-  return (
-    <div className="space-y-7 md:space-y-8">
-      <section aria-labelledby="upcoming-heading">
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 id="upcoming-heading" className="text-lg font-semibold">Próximo agendamento</h2>
-          {upcoming.length > 1 && <span className="text-sm text-muted-foreground">+{upcoming.length - 1} próximo{upcoming.length > 2 ? "s" : ""}</span>}
-        </div>
+  useEffect(() => {
+    const refresh = () => router.refresh();
+    const onVisibilityChange = () => { if (document.visibilityState === "visible") refresh(); };
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => { window.removeEventListener("focus", refresh); document.removeEventListener("visibilitychange", onVisibilityChange); };
+  }, [router]);
 
-        {firstUpcoming ? (
-          <div className="space-y-3">
-            <Card className="p-4 sm:p-5">
-              <div className="flex items-start justify-between gap-3">
-                <AppointmentIdentity appointment={firstUpcoming} />
-                <StatusBadge status={firstUpcoming.status} />
-              </div>
-              <AppointmentTime appointment={firstUpcoming} />
-              {establishmentId && (
-                <div className="mt-4 flex flex-wrap items-center gap-2 border-t pt-3">
-                  <CancelAppointmentButton appointmentId={firstUpcoming.id} estabelecimentoId={establishmentId} />
-                </div>
-              )}
-            </Card>
-
-            {additionalUpcoming.length > 0 && (
-              <div aria-label="Outros próximos agendamentos" className="divide-y rounded-lg border">
-                <p className="px-4 py-3 text-sm font-medium">Próximos horários</p>
-                {additionalUpcoming.map((appointment) => (
-                  <div key={appointment.id} className="flex min-w-0 items-start justify-between gap-3 px-4 py-3">
-                    <div className="min-w-0">
-                      <AppointmentIdentity appointment={appointment} />
-                      <AppointmentTime appointment={appointment} compact />
-                    </div>
-                    <StatusBadge status={appointment.status} />
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        ) : (
-          <Card className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-muted-foreground">Nenhum agendamento futuro.</p>
-            <Link href={bookingHref} className="w-full sm:w-auto">
-              <Button className="w-full sm:w-auto"><CalendarPlus size={16} /> Agendar horário</Button>
-            </Link>
-          </Card>
-        )}
-      </section>
-
-      <section aria-labelledby="history-heading">
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <div>
-            <h2 id="history-heading" className="text-lg font-semibold">Histórico</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Atendimentos passados</p>
-          </div>
-        </div>
-
-        {history.length === 0 ? (
-          <div className="border-t py-5">
-            <p className="text-sm font-medium">Nenhum atendimento realizado ainda.</p>
-            <p className="mt-1 text-sm text-muted-foreground">Seu histórico aparecerá aqui após o primeiro atendimento.</p>
-          </div>
-        ) : (
-          <>
-            <div className="divide-y border-y md:hidden">
-              {visibleHistory.map((appointment) => (
-                <article key={appointment.id} className="py-4">
-                  <div className="flex min-w-0 items-start justify-between gap-3">
-                    <AppointmentIdentity appointment={appointment} />
-                    <StatusBadge status={appointment.status} />
-                  </div>
-                  <AppointmentTime appointment={appointment} compact />
-                  <div className="mt-3">
-                    <AppointmentActions appointment={appointment} establishmentId={establishmentId} guestPhone={guestPhone} showReviews={showReviews} />
-                  </div>
-                </article>
-              ))}
-            </div>
-
-            <div className="hidden overflow-hidden rounded-lg border md:block">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-muted/50 text-muted-foreground">
-                  <tr>
-                    <th className="px-4 py-3 font-medium">Serviço</th>
-                    <th className="px-4 py-3 font-medium">Profissional</th>
-                    <th className="px-4 py-3 font-medium">Data e horário</th>
-                    <th className="px-4 py-3 font-medium">Status</th>
-                    {showReviews && <th className="px-4 py-3 font-medium">Avaliação</th>}
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {visibleHistory.map((appointment) => (
-                    <tr key={appointment.id} className="align-top">
-                      <td className="max-w-52 px-4 py-3 font-medium"><span className="block truncate">{appointment.servicos?.nome ?? "Serviço"}</span></td>
-                      <td className="max-w-52 px-4 py-3"><span className="block truncate">{appointment.profissionais?.nome ?? "Profissional não informado"}</span></td>
-                      <td className="px-4 py-3 whitespace-nowrap">{formatAppointmentDateTime(appointment.data, appointment.hora_inicio, appointment.hora_fim).compact}</td>
-                      <td className="px-4 py-3"><StatusBadge status={appointment.status} /></td>
-                      {showReviews && <td className="min-w-64 px-4 py-3"><AppointmentActions appointment={appointment} establishmentId={establishmentId} guestPhone={guestPhone} showReviews={showReviews} /></td>}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
-
-        {history.length > INITIAL_HISTORY_SIZE && (
-          <Button
-            type="button"
-            variant="ghost"
-            className="mt-3 w-full border sm:w-auto"
-            aria-expanded={showAllHistory}
-            onClick={() => setShowAllHistory((visible) => !visible)}
-          >
-            {showAllHistory ? "Mostrar menos" : `Ver mais (${history.length - INITIAL_HISTORY_SIZE})`}
-          </Button>
-        )}
-      </section>
-    </div>
-  );
+  const completeCancel = () => { setCancelAppointment(null); router.refresh(); };
+  return <div className="space-y-7 md:space-y-8"><section aria-labelledby="upcoming-heading"><div className="mb-3 flex items-center justify-between gap-3"><h2 id="upcoming-heading" className="text-lg font-semibold">Próximos agendamentos</h2><span className="rounded-full bg-muted px-2.5 py-1 text-sm font-semibold" aria-label={`${upcoming.length} próximos agendamentos`}>{upcoming.length}</span></div>{upcoming.length ? <div className="divide-y border-y">{visibleUpcoming.map((appointment, index) => { const formatted = formatAppointmentDateTime(appointment.data, appointment.hora_inicio, appointment.hora_fim); return <article key={appointment.id} className={`py-4 ${index === 0 ? "border-l-2 border-primary pl-3" : ""}`}><div className="flex min-w-0 items-start gap-3"><div className="min-w-0 flex-1">{index === 0 && <p className="mb-1 text-xs font-bold tracking-wide text-primary">PRÓXIMO</p>}{identity(appointment)}<p className="mt-2 text-sm text-muted-foreground">{formatted.compact}</p></div><div className="flex shrink-0 items-start gap-1"><StatusBadge status={appointment.status} />{establishmentId && <AppointmentMenu appointment={appointment} onCancel={() => setCancelAppointment(appointment)} />}</div></div></article>; })}</div> : <div className="border-y py-4"><p className="text-sm text-muted-foreground">Nenhum agendamento futuro.</p></div>}{upcoming.length > INITIAL_UPCOMING_SIZE && <Button type="button" variant="ghost" className="mt-3 w-full border sm:w-auto" aria-expanded={showAllUpcoming} onClick={() => setShowAllUpcoming((visible) => !visible)}>{showAllUpcoming ? "Mostrar menos" : `Ver todos (${upcoming.length})`}</Button>}</section><section aria-labelledby="history-heading"><div className="mb-3"><h2 id="history-heading" className="text-lg font-semibold">Histórico</h2></div>{history.length === 0 ? <div className="border-t py-4"><p className="text-sm font-medium">Nenhum atendimento realizado ainda.</p><p className="mt-1 text-sm text-muted-foreground">Seu histórico aparecerá aqui após o primeiro atendimento.</p></div> : <div className="divide-y border-y">{visibleHistory.map((appointment) => <article key={appointment.id} className="py-4"><div className="flex min-w-0 items-start justify-between gap-3"><div className="min-w-0">{identity(appointment)}<p className="mt-2 text-sm text-muted-foreground">{formatAppointmentDateTime(appointment.data, appointment.hora_inicio, appointment.hora_fim).compact}</p></div><StatusBadge status={appointment.status} /></div><HistoryActions appointment={appointment} bookingHref={bookingHref} establishmentId={establishmentId} guestPhone={guestPhone} showReviews={showReviews} /></article>)}</div>}{history.length > INITIAL_HISTORY_SIZE && <Button type="button" variant="ghost" className="mt-3 w-full border sm:w-auto" aria-expanded={showAllHistory} onClick={() => setShowAllHistory((visible) => !visible)}>{showAllHistory ? "Mostrar menos" : `Ver histórico completo (${history.length})`}</Button>}</section><CancelDialog appointment={cancelAppointment} establishmentId={establishmentId} guestPhone={guestPhone} onClose={() => setCancelAppointment(null)} onSuccess={completeCancel} /></div>;
 }

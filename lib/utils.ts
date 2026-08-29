@@ -30,9 +30,11 @@ export function formatAppointmentDateTime(date: string, start: string, end: stri
 
   // Data é uma coluna DATE: criá-la ao meio-dia evita deslocamento de dia por UTC.
   const dateValue = new Date(year, month - 1, day, 12);
-  const dayLabel = new Intl.DateTimeFormat("pt-BR", { weekday: "short", day: "numeric", month: "short" })
-    .format(dateValue)
-    .replace(".", "");
+  const compactParts = new Intl.DateTimeFormat("pt-BR", { weekday: "short", day: "numeric", month: "short" })
+    .formatToParts(dateValue);
+  const compactPart = (type: Intl.DateTimeFormatPartTypes) => compactParts.find((part) => part.type === type)?.value ?? "";
+  const weekday = compactPart("weekday").replace(".", "");
+  const dayLabel = `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)}, ${compactPart("day")} ${compactPart("month").replace(".", "")}`;
   const fullDayLabel = new Intl.DateTimeFormat("pt-BR", { weekday: "long", day: "numeric", month: "long" })
     .format(dateValue)
     .replace("-feira", "");
@@ -62,6 +64,5 @@ export function isUpcomingAppointment(appointment: { data: string; hora_fim: str
 }
 
 export function isHistoricalAppointment(appointment: { data: string; hora_fim: string; status: string }) {
-  return ["finalizado", "cancelado"].includes(appointment.status) &&
-    `${appointment.data}T${appointment.hora_fim.slice(0, 5)}` <= fortalezaDateTimeKey();
+  return ["finalizado", "cancelado"].includes(appointment.status);
 }

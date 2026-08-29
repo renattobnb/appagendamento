@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CalendarDays, Check, ChevronRight, Loader2, UserRound, X } from "lucide-react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { createPortal } from "react-dom";
@@ -43,10 +43,14 @@ function ChoiceDialog({ open, title, onClose, children }: { open: boolean; title
 }
 
 export function AppointmentForm({ services, professionals, estabelecimentoId }: { services: Service[]; professionals: Professional[]; estabelecimentoId: string }) {
-  const router = useRouter(); const params = useParams(); const tenantSlug = params?.tenantSlug as string | undefined;
+  const router = useRouter(); const params = useParams(); const searchParams = useSearchParams(); const tenantSlug = params?.tenantSlug as string | undefined;
   const today = useMemo(fortalezaToday, []); const abortRef = useRef<AbortController | null>(null);
+  const preferredServiceId = searchParams.get("service");
+  const preferredService = services.find((service) => service.id === preferredServiceId);
+  const preferredProfessionalId = searchParams.get("professional");
+  const preferredProfessional = preferredService && professionals.find((professional) => professional.id === preferredProfessionalId && (professional.profissional_servicos ?? []).some((link) => link.servico_id === preferredService.id));
   const [slots, setSlots] = useState<string[]>([]); const [nextAvailable, setNextAvailable] = useState<{ date: string; slot: string } | null>(null); const [loadingSlots, setLoadingSlots] = useState(false); const [slotsError, setSlotsError] = useState<string | null>(null); const [creatingAppointment, setCreatingAppointment] = useState(false); const [choice, setChoice] = useState<"service" | "professional" | null>(null); const [showCalendar, setShowCalendar] = useState(false); const [showNotes, setShowNotes] = useState(false); const [clientData, setClientData] = useState({ nome: "", telefone: "" });
-  const form = useForm<z.infer<typeof appointmentSchema>>({ resolver: zodResolver(appointmentSchema), defaultValues: { servico_id: services.length === 1 ? services[0]?.id ?? "" : "", profissional_id: "", data: today, hora_inicio: "", estabelecimento_id: estabelecimentoId, observacoes: "" } });
+  const form = useForm<z.infer<typeof appointmentSchema>>({ resolver: zodResolver(appointmentSchema), defaultValues: { servico_id: preferredService?.id ?? (services.length === 1 ? services[0]?.id ?? "" : ""), profissional_id: preferredProfessional?.id ?? "", data: today, hora_inicio: "", estabelecimento_id: estabelecimentoId, observacoes: "" } });
   const watch = form.watch();
   const selectedService = useMemo(() => services.find((service) => service.id === watch.servico_id), [services, watch.servico_id]);
   const availableProfessionals = useMemo(() => professionals.filter((professional) => (professional.profissional_servicos ?? []).some((link) => link.servico_id === watch.servico_id)), [professionals, watch.servico_id]);
